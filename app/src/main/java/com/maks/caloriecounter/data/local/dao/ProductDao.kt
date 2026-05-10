@@ -20,6 +20,9 @@ interface ProductDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertProduct(product: ProductEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertProducts(products: List<ProductEntity>)
+    
     @Update
     suspend fun updateProduct(product: ProductEntity)
 
@@ -28,4 +31,7 @@ interface ProductDao {
 
     @Query("SELECT * FROM products WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun findProductByName(name: String): ProductEntity?
+
+    @Query("SELECT COUNT(*) FROM products")
+    suspend fun countProducts(): Int    
 }
