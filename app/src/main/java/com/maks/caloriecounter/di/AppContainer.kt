@@ -23,23 +23,33 @@ class AppContainer(context: Context) {
     val mealRepository = MealRepository(database.mealEntryDao())
     val settingsRepository = SettingsRepository(UserPreferencesDataStore(appContext))
 
-    fun todayViewModelFactory(date: String): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = TodayViewModel(date, mealRepository, settingsRepository) as T
+    fun todayViewModelFactory(date: String): ViewModelProvider.Factory = viewModelFactory {
+        TodayViewModel(date, mealRepository, settingsRepository)
     }
 
-    fun addMealViewModelFactory(date: String): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = AddMealViewModel(date, productRepository, mealRepository) as T
+    fun addMealViewModelFactory(date: String): ViewModelProvider.Factory = viewModelFactory {
+        AddMealViewModel(date, productRepository, mealRepository)
     }
 
-    fun productsViewModelFactory(date: String): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = ProductsViewModel(date, productRepository, mealRepository) as T
+    fun productsViewModelFactory(date: String): ViewModelProvider.Factory = viewModelFactory {
+        ProductsViewModel(date, productRepository, mealRepository)
     }
 
-    fun historyViewModelFactory(): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = HistoryViewModel(mealRepository) as T
+    fun historyViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+        HistoryViewModel(mealRepository)
     }
 
-    fun settingsViewModelFactory(): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T = SettingsViewModel(settingsRepository) as T
+    fun settingsViewModelFactory(): ViewModelProvider.Factory = viewModelFactory {
+        SettingsViewModel(settingsRepository)
     }
 }
+
+private inline fun <reified VM : ViewModel> viewModelFactory(crossinline createViewModel: () -> VM): ViewModelProvider.Factory =
+    object : ViewModelProvider.Factory {
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(VM::class.java)) {
+                return requireNotNull(modelClass.cast(createViewModel()))
+            }
+            error("Unknown ViewModel class: ${modelClass.name}")
+        }
+    }
