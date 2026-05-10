@@ -8,4 +8,6 @@ data class Product(
     val fatPer100g: Double,
     val carbsPer100g: Double,
     val createdAt: Long = System.currentTimeMillis(),
+    val isFavorite: Boolean = false,
+    val lastUsedAt: Long? = null,
 )

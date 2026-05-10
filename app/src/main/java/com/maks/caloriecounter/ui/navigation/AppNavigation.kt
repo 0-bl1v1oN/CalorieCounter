@@ -13,14 +13,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.maks.caloriecounter.di.AppContainer
 import com.maks.caloriecounter.domain.util.DateUtils
 import com.maks.caloriecounter.ui.screens.addmeal.AddMealScreen
 import com.maks.caloriecounter.ui.screens.history.HistoryScreen
+import com.maks.caloriecounter.ui.screens.products.ProductFormScreen
 import com.maks.caloriecounter.ui.screens.products.ProductsScreen
 import com.maks.caloriecounter.ui.screens.settings.SettingsScreen
 import com.maks.caloriecounter.ui.screens.today.TodayScreen
@@ -71,7 +74,23 @@ fun AppNavigation(appContainer: AppContainer) {
             }
             composable(Routes.Products) {
                 val vm: com.maks.caloriecounter.ui.screens.products.ProductsViewModel = viewModel(key = "products-$selectedDate", factory = appContainer.productsViewModelFactory(selectedDate))
-                ProductsScreen(vm)
+                ProductsScreen(
+                    viewModel = vm,
+                    onAddProduct = { navController.navigate(Routes.ProductAdd) },
+                    onEditProduct = { productId -> navController.navigate(Routes.productEdit(productId)) },
+                )
+            }
+            composable(Routes.ProductAdd) {
+                val vm: com.maks.caloriecounter.ui.screens.products.ProductsViewModel = viewModel(key = "product-add-$selectedDate", factory = appContainer.productsViewModelFactory(selectedDate))
+                ProductFormScreen(vm, onSaved = { navController.popBackStack() }, onCancel = { navController.popBackStack() })
+            }
+            composable(
+                route = Routes.ProductEdit,
+                arguments = listOf(navArgument("productId") { type = NavType.LongType }),
+            ) { entry ->
+                val productId = requireNotNull(entry.arguments?.getLong("productId"))
+                val vm: com.maks.caloriecounter.ui.screens.products.ProductsViewModel = viewModel(key = "product-edit-$productId", factory = appContainer.productsViewModelFactory(selectedDate))
+                ProductFormScreen(vm, onSaved = { navController.popBackStack() }, onCancel = { navController.popBackStack() }, productId = productId)
             }
             composable(Routes.History) {
                 val vm: com.maks.caloriecounter.ui.screens.history.HistoryViewModel = viewModel(factory = appContainer.historyViewModelFactory())

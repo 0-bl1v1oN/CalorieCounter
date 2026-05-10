@@ -7,6 +7,8 @@ import com.maks.caloriecounter.data.repository.ProductRepository
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.Product
 import com.maks.caloriecounter.ui.screens.addmeal.asDouble
+import java.text.Collator
+import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,61 +22,135 @@ class ProductsViewModel(
     private val productRepository: ProductRepository,
     private val mealRepository: MealRepository,
 ) : ViewModel() {
-    private val formState = MutableStateFlow(ProductsUiState())
+    private val screenState = MutableStateFlow(ProductsUiState())
 
-    val uiState: StateFlow<ProductsUiState> = combine(productRepository.observeProducts(), formState) { products, state ->
-        state.copy(products = products.filter { it.name.contains(state.query, ignoreCase = true) })
+    val uiState: StateFlow<ProductsUiState> = combine(productRepository.observeProducts(), screenState) { products, state ->
+        val sortedProducts = products.sortedAlphabetically()
+        val favoriteProducts = sortedProducts.filter { it.isFavorite }
+        val recentProducts = sortedProducts.filter { it.lastUsedAt != null }.sortedByDescending { it.lastUsedAt }
+        val source = when (state.selectedFilter) {
+            ProductFilter.All -> sortedProducts
+            ProductFilter.Favorites -> favoriteProducts
+            ProductFilter.Recent -> recentProducts
+        }
+        val filteredProducts = source.filterByQuery(state.searchQuery)
+
+    state.copy(
+            products = sortedProducts,
+            favoriteProducts = favoriteProducts.filterByQuery(state.searchQuery),
+            recentProducts = recentProducts.filterByQuery(state.searchQuery),
+            filteredProducts = filteredProducts,
+            isLoading = false,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProductsUiState())
 
-    fun updateQuery(value: String) = formState.update { it.copy(query = value) }
-    fun updateFormName(value: String) = formState.update { it.copy(form = it.form.copy(name = value), error = null) }
-    fun updateFormCalories(value: String) = formState.update { it.copy(form = it.form.copy(calories = value), error = null) }
-    fun updateFormProtein(value: String) = formState.update { it.copy(form = it.form.copy(protein = value), error = null) }
-    fun updateFormFat(value: String) = formState.update { it.copy(form = it.form.copy(fat = value), error = null) }
-    fun updateFormCarbs(value: String) = formState.update { it.copy(form = it.form.copy(carbs = value), error = null) }
+    fun updateSearchQuery(value: String) = screenState.update { it.copy(searchQuery = value) }
 
-    fun edit(product: Product) = formState.update {
-        it.copy(
-            editingProductId = product.id,
-            form = ProductFormState(product.id, product.name, product.caloriesPer100g.clean(), product.proteinPer100g.clean(), product.fatPer100g.clean(), product.carbsPer100g.clean()),
-            error = null,
-        )
+    fun selectFilter(filter: ProductFilter) = screenState.update { it.copy(selectedFilter = filter) }
+
+    fun openActions(product: Product) = screenState.update { it.copy(actionsProduct = product) }
+
+    fun closeActions() = screenState.update { it.copy(actionsProduct = null) }
+
+    fun requestDeleteProduct(product: Product) = screenState.update { it.copy(actionsProduct = null, deleteConfirmationProduct = product) }
+
+    fun dismissDeleteConfirmation() = screenState.update { it.copy(deleteConfirmationProduct = null) }
+
+    fun deleteProduct(product: Product) = viewModelScope.launch {
+        productRepository.deleteProduct(product)
+        screenState.update { it.copy(deleteConfirmationProduct = null, snackbarMessage = "Продукт удалён") }
     }
 
-    fun cancelEdit() = formState.update { it.copy(editingProductId = null, form = ProductFormState(), error = null) }
-
-    fun saveProduct() {
-        val state = formState.value
-        val form = state.form
-        val product = form.toProductOrNull() ?: run {
-            formState.update { it.copy(error = validateMessage(form)) }
-            return
-        }
-        viewModelScope.launch {
-            if (state.editingProductId == null) productRepository.upsertProductByName(product) else productRepository.updateProduct(product.copy(id = state.editingProductId))
-            cancelEdit()
-        }
+    fun toggleFavorite(product: Product) = viewModelScope.launch {
+        productRepository.toggleFavorite(product)
+        screenState.update { it.copy(actionsProduct = null) }
     }
 
-    fun delete(product: Product) = viewModelScope.launch { productRepository.deleteProduct(product) }
+    fun openQuickAdd(product: Product) = screenState.update { it.copy(actionsProduct = null, quickAdd = QuickAddState(product = product), errorMessage = null) }
 
-    fun openQuickAdd(product: Product) = formState.update { it.copy(quickAdd = QuickAddState(product = product)) }
-    fun closeQuickAdd() = formState.update { it.copy(quickAdd = QuickAddState(), error = null) }
-    fun updateQuickGrams(value: String) = formState.update { it.copy(quickAdd = it.quickAdd.copy(grams = value), error = null) }
-    fun updateQuickMealType(value: MealType) = formState.update { it.copy(quickAdd = it.quickAdd.copy(mealType = value)) }
-    fun quickAdd() {
-        val quick = formState.value.quickAdd
+    fun closeQuickAdd() = screenState.update { it.copy(quickAdd = QuickAddState(), errorMessage = null) }
+
+    fun updateQuickGrams(value: String) = screenState.update { it.copy(quickAdd = it.quickAdd.copy(grams = value), errorMessage = null) }
+
+    fun updateQuickMealType(value: MealType) = screenState.update { it.copy(quickAdd = it.quickAdd.copy(mealType = value)) }
+
+    fun quickAddProduct() {
+        val quick = screenState.value.quickAdd
         val product = quick.product ?: return
         val grams = quick.grams.asDouble()
         if (grams == null || grams <= 0) {
-            formState.update { it.copy(error = "Граммы должны быть больше 0") }
+            screenState.update { it.copy(errorMessage = "Граммы должны быть больше 0") }
             return
         }
         viewModelScope.launch {
             mealRepository.addProductToDate(product, date, grams, quick.mealType)
-            closeQuickAdd()
+            productRepository.updateLastUsedAt(product.id)
+            screenState.update { it.copy(quickAdd = QuickAddState(), errorMessage = null, snackbarMessage = "Добавлено в дневник") }
         }
     }
+
+    fun startAddProduct() = screenState.update {
+        it.copy(form = ProductFormState(), editingProductId = null, errorMessage = null, isFormSaved = false)
+    }
+
+    fun loadProductForEdit(productId: Long) {
+        if (screenState.value.editingProductId == productId) return
+        viewModelScope.launch {
+            val product = productRepository.getProduct(productId)
+            if (product == null) {
+                screenState.update { it.copy(errorMessage = "Продукт не найден") }
+                return@launch
+            }
+            screenState.update {
+                it.copy(
+                    form = product.toFormState(),
+                    editingProductId = product.id,
+                    errorMessage = null,
+                    isFormSaved = false,
+                )
+            }
+        }
+    }
+
+    fun updateFormName(value: String) = screenState.update { it.copy(form = it.form.copy(name = value), errorMessage = null) }
+    fun updateFormCalories(value: String) = screenState.update { it.copy(form = it.form.copy(calories = value), errorMessage = null) }
+    fun updateFormProtein(value: String) = screenState.update { it.copy(form = it.form.copy(protein = value), errorMessage = null) }
+    fun updateFormFat(value: String) = screenState.update { it.copy(form = it.form.copy(fat = value), errorMessage = null) }
+    fun updateFormCarbs(value: String) = screenState.update { it.copy(form = it.form.copy(carbs = value), errorMessage = null) }
+
+    fun saveProduct() {
+        val state = screenState.value
+        val form = state.form
+        val product = form.toProductOrNull() ?: run {
+            screenState.update { it.copy(errorMessage = validateMessage(form)) }
+            return
+        }
+        viewModelScope.launch {
+            if (state.editingProductId == null) {
+                productRepository.upsertProductByName(product)
+            } else {
+                val current = productRepository.getProduct(state.editingProductId)
+                val productWithSameName = productRepository.findProductByName(product.name)
+                if (productWithSameName != null && productWithSameName.id != state.editingProductId) {
+                    screenState.update { it.copy(errorMessage = "Продукт с таким названием уже есть") }
+                    return@launch
+                }
+                productRepository.updateProduct(
+                    product.copy(
+                        id = state.editingProductId,
+                        createdAt = current?.createdAt ?: product.createdAt,
+                        isFavorite = current?.isFavorite ?: false,
+                        lastUsedAt = current?.lastUsedAt,
+                    ),
+                )
+            }
+            screenState.update { it.copy(isFormSaved = true, errorMessage = null, snackbarMessage = "Продукт сохранён") }
+        }
+    }
+
+    fun clearSnackbarMessage() = screenState.update { it.copy(snackbarMessage = null) }
+
+    fun clearFormSaved() = screenState.update { it.copy(isFormSaved = false) }
 
     private fun ProductFormState.toProductOrNull(): Product? {
         val caloriesValue = calories.asDouble()
@@ -93,6 +169,31 @@ class ProductsViewModel(
         form.fat.asDouble() == null || form.fat.asDouble()!! < 0 -> "Жиры не должны быть отрицательными"
         else -> "Углеводы не должны быть отрицательными"
     }
+
+    private companion object {
+        val RussianCollator: Collator = Collator.getInstance(Locale("ru")).apply { strength = Collator.PRIMARY }
+
+        fun List<Product>.sortedAlphabetically(): List<Product> = sortedWith { first, second ->
+            RussianCollator.compare(first.name.normalizedForSort(), second.name.normalizedForSort())
+        }
+
+        fun List<Product>.filterByQuery(query: String): List<Product> {
+            val normalizedQuery = query.trim().normalizedForSort()
+            if (normalizedQuery.isBlank()) return this
+            return filter { product -> product.name.normalizedForSort().contains(normalizedQuery, ignoreCase = true) }
+        }
+
+        fun String.normalizedForSort(): String = lowercase(Locale("ru")).replace('ё', 'е')
+    }
 }
 
-fun Double.clean(): String = if (this % 1.0 == 0.0) toInt().toString() else toString()
+fun Double.clean(): String = if (this % 1.0 == 0.0) toInt().toString() else String.format(Locale.US, "%.1f", this)
+
+private fun Product.toFormState(): ProductFormState = ProductFormState(
+    id = id,
+    name = name,
+    calories = caloriesPer100g.clean(),
+    protein = proteinPer100g.clean(),
+    fat = fatPer100g.clean(),
+    carbs = carbsPer100g.clean(),
+)

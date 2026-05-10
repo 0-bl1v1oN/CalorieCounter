@@ -22,7 +22,9 @@ import kotlinx.coroutines.launch
 
 class AppContainer(context: Context) {
     private val appContext = context.applicationContext
-    private val database: AppDatabase = Room.databaseBuilder(appContext, AppDatabase::class.java, "calorie_counter.db").build()
+    private val database: AppDatabase = Room.databaseBuilder(appContext, AppDatabase::class.java, "calorie_counter.db")
+        .addMigrations(AppDatabase.MIGRATION_1_2)
+        .build()
 
     private val productDao = database.productDao()
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -33,10 +35,10 @@ class AppContainer(context: Context) {
 
     init {
         applicationScope.launch {
-            ProductCsvImporter(appContext, productDao).importIfDatabaseIsEmpty()
+            ProductCsvImporter(appContext, productDao).importIfNeeded()
         }
     }
-    
+
     fun todayViewModelFactory(date: String): ViewModelProvider.Factory = viewModelFactory {
         TodayViewModel(date, mealRepository, settingsRepository)
     }

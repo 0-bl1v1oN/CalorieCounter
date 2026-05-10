@@ -32,6 +32,12 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun findProductByName(name: String): ProductEntity?
 
+    @Query("UPDATE products SET isFavorite = :isFavorite WHERE id = :productId")
+    suspend fun updateFavorite(productId: Long, isFavorite: Boolean)
+
+    @Query("UPDATE products SET lastUsedAt = :lastUsedAt WHERE id = :productId")
+    suspend fun updateLastUsedAt(productId: Long, lastUsedAt: Long)
+
     @Query("SELECT COUNT(*) FROM products")
-    suspend fun countProducts(): Int    
+    suspend fun countProducts(): Int
 }

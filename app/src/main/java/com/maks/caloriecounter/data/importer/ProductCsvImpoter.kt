@@ -1,30 +1,47 @@
 package com.maks.caloriecounter.data.importer
 
 import android.content.Context
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import com.maks.caloriecounter.data.local.dao.ProductDao
 import com.maks.caloriecounter.data.local.entity.ProductEntity
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+
+private val Context.productImportDataStore by preferencesDataStore(name = "product_import_metadata")
 
 class ProductCsvImporter(
     private val context: Context,
     private val productDao: ProductDao,
 ) {
-    suspend fun importIfDatabaseIsEmpty() = withContext(Dispatchers.IO) {
-        if (productDao.countProducts() > 0) return@withContext
+    suspend fun importIfNeeded() = withContext(Dispatchers.IO) {
+        val csvBytes = context.assets.open(PRODUCTS_FILE_NAME).use { input -> input.readBytes() }
+        val csvHash = csvBytes.sha256()
+        val lastImportedHash = context.productImportDataStore.data.first()[PRODUCTS_CSV_HASH_KEY]
+        val hasProducts = productDao.countProducts() > 0
 
-        val products = context.assets.open(PRODUCTS_FILE_NAME).bufferedReader().useLines { lines ->
-            lines.mapNotNull(::parseProductLine).toList()
-        }
+        if (hasProducts && lastImportedHash == csvHash) return@withContext
 
-        if (products.isNotEmpty()) {
-            productDao.insertProducts(products)
+        val products = csvBytes.toString(Charsets.UTF_8).lineSequence()
+            .mapNotNull(::parseProductLine)
+            .toList()
+
+        if (products.isEmpty()) return@withContext
+
+        productDao.insertProducts(products)
+        context.productImportDataStore.edit { preferences ->
+            preferences[PRODUCTS_CSV_HASH_KEY] = csvHash
         }
     }
 
     private fun parseProductLine(line: String): ProductEntity? {
-        val columns = line.parseCsvColumns().map { it.trim() }
-        if (columns.size < MIN_COLUMNS) return null
+        if (line.isBlank()) return null
+
+        val columns = line.parseCsvColumns().map { it.trim().trimStart(BOM_CHAR) }
+        if (columns.size < MIN_COLUMNS || columns.isHeader()) return null
 
         val nutritionStartIndex = columns.indexOfFirstNutritionBlock()
         if (nutritionStartIndex <= 0) return null
@@ -45,6 +62,10 @@ class ProductCsvImporter(
             carbsPer100g = carbs,
         )
     }
+
+    private fun List<String>.isHeader(): Boolean =
+        firstOrNull().equals("name", ignoreCase = true) &&
+            getOrNull(1).equals("caloriesPer100g", ignoreCase = true)
 
     private fun List<String>.indexOfFirstNutritionBlock(): Int {
         val maxStartIndex = size - NUTRITION_COLUMN_COUNT
@@ -87,9 +108,15 @@ class ProductCsvImporter(
         return columns
     }
 
+    private fun ByteArray.sha256(): String = MessageDigest.getInstance("SHA-256")
+        .digest(this)
+        .joinToString(separator = "") { byte -> "%02x".format(byte.toInt() and 0xff) }
+
     private companion object {
         const val PRODUCTS_FILE_NAME = "products.csv"
         const val MIN_COLUMNS = 5
         const val NUTRITION_COLUMN_COUNT = 4
+        const val BOM_CHAR = '\uFEFF'
+        val PRODUCTS_CSV_HASH_KEY = stringPreferencesKey("products_csv_hash")
     }
 }

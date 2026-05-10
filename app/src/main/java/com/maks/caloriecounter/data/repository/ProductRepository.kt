@@ -16,10 +16,19 @@ class ProductRepository(private val productDao: ProductDao) {
 
     suspend fun upsertProductByName(product: Product): Long {
         val existing = findProductByName(product.name)
-        return existing?.id ?: insertProduct(product.copy(name = product.name.trim()))
+        return if (existing == null) {
+            insertProduct(product.copy(name = product.name.trim()))
+        } else {
+            updateProduct(product.copy(id = existing.id, createdAt = existing.createdAt, isFavorite = existing.isFavorite, lastUsedAt = existing.lastUsedAt))
+            existing.id
+        }
     }
 
     suspend fun updateProduct(product: Product) = productDao.updateProduct(product.toEntity())
 
     suspend fun deleteProduct(product: Product) = productDao.deleteProduct(product.toEntity())
+
+    suspend fun toggleFavorite(product: Product) = productDao.updateFavorite(product.id, !product.isFavorite)
+
+    suspend fun updateLastUsedAt(productId: Long, lastUsedAt: Long = System.currentTimeMillis()) = productDao.updateLastUsedAt(productId, lastUsedAt)
 }
