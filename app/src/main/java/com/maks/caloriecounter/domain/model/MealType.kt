@@ -7,6 +7,10 @@ enum class MealType(val title: String) {
     Snack("Перекус");
 
     companion object {
-        fun fromStorage(value: String): MealType = entries.firstOrNull { it.name == value } ?: Snack
+        val todaySections: List<MealType> = listOf(Breakfast, Lunch, Dinner, Snack)
+
+        fun fromStorage(value: String): MealType = entries.firstOrNull { type ->
+            type.name.equals(value, ignoreCase = true) || type.title.equals(value, ignoreCase = true)
+        } ?: Snack
     }
 }

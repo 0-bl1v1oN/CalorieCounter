@@ -35,6 +35,7 @@ import com.maks.caloriecounter.ui.screens.today.TodayScreen
 fun AppNavigation(appContainer: AppContainer) {
     val navController = rememberNavController()
     var selectedDate by rememberSaveable { mutableStateOf(DateUtils.today()) }
+    var todaySnackbarMessage by rememberSaveable { mutableStateOf<String?>(null) }
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = currentRoute in bottomNavItems.map { it.route }
@@ -79,11 +80,20 @@ fun AppNavigation(appContainer: AppContainer) {
                     onPreviousDay = { selectedDate = DateUtils.shift(selectedDate, -1) },
                     onNextDay = { selectedDate = DateUtils.shift(selectedDate, 1) },
                     onAddMeal = { navController.navigate(Routes.AddMeal) },
+                    snackbarMessage = todaySnackbarMessage,
+                    onSnackbarShown = { todaySnackbarMessage = null },
                 )
             }
             composable(Routes.AddMeal) {
                 val vm: com.maks.caloriecounter.ui.screens.addmeal.AddMealViewModel = viewModel(key = "add-$selectedDate", factory = appContainer.addMealViewModelFactory(selectedDate))
-                AddMealScreen(vm, onSaved = { navController.popBackStack() })
+                AddMealScreen(
+                    viewModel = vm,
+                    onSaved = {
+                        todaySnackbarMessage = "Добавлено в дневник"
+                        navController.popBackStack()
+                    },
+                    onCreateProduct = { navController.navigate(Routes.ProductAdd) },
+                )
             }
             composable(Routes.Products) {
                 val vm: com.maks.caloriecounter.ui.screens.products.ProductsViewModel = viewModel(key = "products-$selectedDate", factory = appContainer.productsViewModelFactory(selectedDate))

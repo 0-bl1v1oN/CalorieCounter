@@ -22,12 +22,19 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.maks.caloriecounter.domain.model.DailySummary
 import com.maks.caloriecounter.domain.model.MealType
@@ -44,64 +51,80 @@ fun TodayScreen(
     onNextDay: () -> Unit,
     onAddMeal: () -> Unit,
     modifier: Modifier = Modifier,
+    snackbarMessage: String? = null,
+    onSnackbarShown: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsState()
     val entriesByMeal = state.entries.groupBy { it.entry.mealType }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    LazyColumn(
+    LaunchedEffect(snackbarMessage) {
+        val message = snackbarMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message)
+        onSnackbarShown()
+    }
+
+    Scaffold(
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 128.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        item {
-            TodayHeader(
-                date = state.date,
-                onPreviousDay = onPreviousDay,
-                onNextDay = onNextDay,
-            )
-        }
-        item { DailyProgressCard(summary = state.summary, settings = state.settings) }
-        item {
-            Button(
-                onClick = onAddMeal,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(
-                    text = "Добавить еду",
-                    modifier = Modifier.padding(start = 8.dp),
-                )
-            }
-        }
-        if (state.entries.isEmpty()) {
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 128.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
             item {
-                Text(
-                    text = "Добавьте первый продукт за сегодня",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                TodayHeader(
+                    date = state.date,
+                    onPreviousDay = onPreviousDay,
+                    onNextDay = onNextDay,
                 )
             }
-        }
-        MealType.entries.forEach { mealType ->
+            item { DailyProgressCard(summary = state.summary, settings = state.settings) }
             item {
-                MealSectionTitle(title = mealType.title)
-            }
-            val mealEntries = entriesByMeal[mealType].orEmpty()
-            if (mealEntries.isEmpty()) {
-                item(key = "empty-${mealType.name}") { EmptyMealSection() }
-            } else {
-                items(mealEntries, key = { it.entry.id }) { entry ->
-                    MealEntryCard(
-                        entry = entry,
-                        onDelete = { viewModel.deleteEntry(entry.entry.id) },
-                        onUpdateGrams = { viewModel.updateGrams(entry.entry.id, it) },
+                Button(
+                    onClick = onAddMeal,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 14.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
                     )
+                    Text(
+                        text = "Добавить еду",
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
+            }
+            if (state.entries.isEmpty()) {
+                item {
+                    Text(
+                        text = "Добавьте первый продукт за сегодня",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            MealType.todaySections.forEach { mealType ->
+                item {
+                    MealSectionTitle(title = mealType.title)
+                }
+                val mealEntries = entriesByMeal[mealType].orEmpty()
+                if (mealEntries.isEmpty()) {
+                    item(key = "empty-${mealType.name}") { EmptyMealSection() }
+                } else {
+                    items(mealEntries, key = { it.entry.id }) { entry ->
+                        MealEntryCard(
+                            entry = entry,
+                            onDelete = { viewModel.deleteEntry(entry.entry.id) },
+                            onUpdateGrams = { viewModel.updateGrams(entry.entry.id, it) },
+                        )
+                    }
                 }
             }
         }
@@ -219,7 +242,7 @@ private fun MacroProgressRow(
         LinearProgressIndicator(
             progress = { progress(value, goal.toDouble()) },
             modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.82f),
+            color = if (value > goal) WarningAmber else MaterialTheme.colorScheme.primary.copy(alpha = 0.82f),
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
     }
@@ -250,6 +273,7 @@ private fun EmptyMealSection() {
         )
     }
 }
+private val WarningAmber = Color(0xFFFFB74D)
 
 private fun progress(value: Double, goal: Double): Float {
     if (goal <= 0.0) return 0f

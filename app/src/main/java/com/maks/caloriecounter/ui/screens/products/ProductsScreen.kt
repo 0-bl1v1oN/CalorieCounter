@@ -298,7 +298,7 @@ private fun QuickAddDialog(state: ProductsUiState, viewModel: ProductsViewModel)
                 Text(product.nutritionLine(), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 AppTextField(state.quickAdd.grams, viewModel::updateQuickGrams, "Граммы", number = true)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    MealType.entries.forEach { type ->
+                    MealType.todaySections.forEach { type ->
                         FilterChip(
                             selected = state.quickAdd.mealType == type,
                             onClick = { viewModel.updateQuickMealType(type) },
