@@ -89,8 +89,14 @@ class ProductsViewModel(
         }
     }
 
-    fun startAddProduct() = screenState.update {
-        it.copy(form = ProductFormState(), editingProductId = null, errorMessage = null, isFormSaved = false)
+    fun startAddProduct(scannedBarcode: String? = null, barcodeFormat: String? = null) = screenState.update {
+        it.copy(
+            form = ProductFormState(barcode = scannedBarcode?.takeIf { barcode -> barcode.isNotBlank() }, barcodeFormat = barcodeFormat),
+            editingProductId = null,
+            errorMessage = null,
+            isFormSaved = false,
+            snackbarMessage = if (scannedBarcode.isNullOrBlank()) null else "Штрихкод привязан к продукту",
+        )
     }
 
     fun loadProductForEdit(productId: Long) {
@@ -141,6 +147,9 @@ class ProductsViewModel(
                         createdAt = current?.createdAt ?: product.createdAt,
                         isFavorite = current?.isFavorite ?: false,
                         lastUsedAt = current?.lastUsedAt,
+                        barcode = product.barcode ?: current?.barcode,
+                        barcodeFormat = product.barcodeFormat ?: current?.barcodeFormat,
+                        source = current?.source ?: product.source,
                     ),
                 )
             }
@@ -159,7 +168,17 @@ class ProductsViewModel(
         val carbsValue = carbs.asDouble()
         if (name.isBlank() || caloriesValue == null || proteinValue == null || fatValue == null || carbsValue == null) return null
         if (caloriesValue < 0 || proteinValue < 0 || fatValue < 0 || carbsValue < 0) return null
-        return Product(id = id, name = name.trim(), caloriesPer100g = caloriesValue, proteinPer100g = proteinValue, fatPer100g = fatValue, carbsPer100g = carbsValue)
+        return Product(
+            id = id,
+            name = name.trim(),
+            caloriesPer100g = caloriesValue,
+            proteinPer100g = proteinValue,
+            fatPer100g = fatValue,
+            carbsPer100g = carbsValue,
+            barcode = barcode,
+            barcodeFormat = barcodeFormat,
+            source = source,
+        )
     }
 
     private fun validateMessage(form: ProductFormState): String = when {
@@ -196,4 +215,7 @@ private fun Product.toFormState(): ProductFormState = ProductFormState(
     protein = proteinPer100g.clean(),
     fat = fatPer100g.clean(),
     carbs = carbsPer100g.clean(),
+    barcode = barcode,
+    barcodeFormat = barcodeFormat,
+    source = source,
 )

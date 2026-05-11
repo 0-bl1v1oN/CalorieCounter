@@ -12,6 +12,8 @@ class ProductRepository(private val productDao: ProductDao) {
 
     suspend fun findProductByName(name: String): Product? = productDao.findProductByName(name.trim())?.toDomain()
 
+    suspend fun findProductByBarcode(barcode: String): Product? = productDao.findProductByBarcode(barcode.trim())?.toDomain()
+    
     suspend fun insertProduct(product: Product): Long = productDao.insertProduct(product.toEntity())
 
     suspend fun upsertProductByName(product: Product): Long {
@@ -19,7 +21,17 @@ class ProductRepository(private val productDao: ProductDao) {
         return if (existing == null) {
             insertProduct(product.copy(name = product.name.trim()))
         } else {
-            updateProduct(product.copy(id = existing.id, createdAt = existing.createdAt, isFavorite = existing.isFavorite, lastUsedAt = existing.lastUsedAt))
+            updateProduct(
+                product.copy(
+                    id = existing.id,
+                    createdAt = existing.createdAt,
+                    isFavorite = existing.isFavorite,
+                    lastUsedAt = existing.lastUsedAt,
+                    barcode = product.barcode ?: existing.barcode,
+                    barcodeFormat = product.barcodeFormat ?: existing.barcodeFormat,
+                    source = existing.source,
+                ),
+            )
             existing.id
         }
     }

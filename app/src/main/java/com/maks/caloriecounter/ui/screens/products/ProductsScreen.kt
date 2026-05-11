@@ -321,12 +321,14 @@ fun ProductFormScreen(
     onSaved: () -> Unit,
     onCancel: () -> Unit,
     productId: Long? = null,
+    scannedBarcode: String? = null,
+    barcodeFormat: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(productId) {
-        if (productId == null) viewModel.startAddProduct() else viewModel.loadProductForEdit(productId)
+    LaunchedEffect(productId, scannedBarcode, barcodeFormat) {
+        if (productId == null) viewModel.startAddProduct(scannedBarcode, barcodeFormat) else viewModel.loadProductForEdit(productId)
     }
 
     LaunchedEffect(state.isFormSaved) {
@@ -372,7 +374,22 @@ fun ProductFormScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        item {
+        if (!state.form.barcode.isNullOrBlank()) {
+                item {
+                    Card(
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)),
+                        shape = RoundedCornerShape(18.dp),
+                    ) {
+                        Text(
+                            text = "Штрихкод будет привязан к продукту",
+                            modifier = Modifier.padding(14.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                }
+            }
+            item {
                 AppTextField(
                     value = state.form.name,
                     onValueChange = viewModel::updateFormName,

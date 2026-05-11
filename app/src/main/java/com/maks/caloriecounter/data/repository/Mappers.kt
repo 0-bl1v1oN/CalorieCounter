@@ -9,8 +9,8 @@ import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.Product
 import com.maks.caloriecounter.domain.util.NutritionCalculator
 
-fun ProductEntity.toDomain(): Product = Product(id, name, caloriesPer100g, proteinPer100g, fatPer100g, carbsPer100g, createdAt, isFavorite, lastUsedAt)
-fun Product.toEntity(): ProductEntity = ProductEntity(id, name.trim(), caloriesPer100g, proteinPer100g, fatPer100g, carbsPer100g, createdAt, isFavorite, lastUsedAt)
+fun ProductEntity.toDomain(): Product = Product(id, name, caloriesPer100g, proteinPer100g, fatPer100g, carbsPer100g, createdAt, isFavorite, lastUsedAt, barcode, barcodeFormat, source)
+fun Product.toEntity(): ProductEntity = ProductEntity(id, name.trim(), caloriesPer100g, proteinPer100g, fatPer100g, carbsPer100g, createdAt, isFavorite, lastUsedAt, barcode, barcodeFormat, source)
 fun MealEntryEntity.toDomain(): MealEntry = MealEntry(id, productId, date, grams, MealType.fromStorage(mealType), createdAt)
 fun MealEntry.toEntity(): MealEntryEntity = MealEntryEntity(id, productId, date, grams, mealType.name, createdAt)
 fun MealEntryWithProduct.toDomain(): MealEntryDetails = NutritionCalculator.forEntry(entry.toDomain(), product.toDomain())

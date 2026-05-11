@@ -10,4 +10,7 @@ data class Product(
     val createdAt: Long = System.currentTimeMillis(),
     val isFavorite: Boolean = false,
     val lastUsedAt: Long? = null,
+    val barcode: String? = null,
+    val barcodeFormat: String? = null,
+    val source: String = "manual",
 )

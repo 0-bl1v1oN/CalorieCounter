@@ -9,6 +9,11 @@ enum class AddMealProductFilter(val title: String) {
     Recent("Недавние"),
 }
 
+data class PendingScannedBarcode(
+    val rawValue: String,
+    val format: String?,
+)
+
 data class AddMealUiState(
     val searchQuery: String = "",
     val selectedFilter: AddMealProductFilter = AddMealProductFilter.All,
@@ -19,5 +24,7 @@ data class AddMealUiState(
     val mealType: MealType = MealType.Breakfast,
     val isLoading: Boolean = true,
     val error: String? = null,
+    val snackbarMessage: String? = null,
+    val pendingScannedBarcode: PendingScannedBarcode? = null,
     val saved: Boolean = false,
 )

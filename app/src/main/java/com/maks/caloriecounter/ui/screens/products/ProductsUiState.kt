@@ -16,6 +16,9 @@ data class ProductFormState(
     val protein: String = "",
     val fat: String = "",
     val carbs: String = "",
+    val barcode: String? = null,
+    val barcodeFormat: String? = null,
+    val source: String = "manual",
 )
 
 data class QuickAddState(

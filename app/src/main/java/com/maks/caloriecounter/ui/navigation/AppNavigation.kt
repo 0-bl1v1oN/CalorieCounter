@@ -22,6 +22,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import android.net.Uri
 import com.maks.caloriecounter.di.AppContainer
 import com.maks.caloriecounter.domain.util.DateUtils
 import com.maks.caloriecounter.ui.screens.addmeal.AddMealScreen
@@ -92,20 +93,34 @@ fun AppNavigation(appContainer: AppContainer) {
                         todaySnackbarMessage = "Добавлено в дневник"
                         navController.popBackStack()
                     },
-                    onCreateProduct = { navController.navigate(Routes.ProductAdd) },
+                    onCreateProduct = { barcode, format -> navController.navigate(Routes.productAdd(barcode, format)) },
                 )
             }
             composable(Routes.Products) {
                 val vm: com.maks.caloriecounter.ui.screens.products.ProductsViewModel = viewModel(key = "products-$selectedDate", factory = appContainer.productsViewModelFactory(selectedDate))
                 ProductsScreen(
                     viewModel = vm,
-                    onAddProduct = { navController.navigate(Routes.ProductAdd) },
+                    onAddProduct = { navController.navigate(Routes.ProductAddBase) },
                     onEditProduct = { productId -> navController.navigate(Routes.productEdit(productId)) },
                 )
             }
-            composable(Routes.ProductAdd) {
-                val vm: com.maks.caloriecounter.ui.screens.products.ProductsViewModel = viewModel(key = "product-add-$selectedDate", factory = appContainer.productsViewModelFactory(selectedDate))
-                ProductFormScreen(vm, onSaved = { navController.popBackStack() }, onCancel = { navController.popBackStack() })
+            composable(
+                route = Routes.ProductAdd,
+                arguments = listOf(
+                    navArgument("scannedBarcode") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("barcodeFormat") { type = NavType.StringType; nullable = true; defaultValue = null },
+                ),
+            ) { entry ->
+                val scannedBarcode = entry.arguments?.getString("scannedBarcode")?.let(Uri::decode)?.takeIf { it.isNotBlank() }
+                val barcodeFormat = entry.arguments?.getString("barcodeFormat")?.let(Uri::decode)?.takeIf { it.isNotBlank() }
+                val vm: com.maks.caloriecounter.ui.screens.products.ProductsViewModel = viewModel(key = "product-add-$selectedDate-${scannedBarcode.orEmpty()}", factory = appContainer.productsViewModelFactory(selectedDate))
+                ProductFormScreen(
+                    vm,
+                    onSaved = { navController.popBackStack() },
+                    onCancel = { navController.popBackStack() },
+                    scannedBarcode = scannedBarcode,
+                    barcodeFormat = barcodeFormat,
+                )
             }
             composable(
                 route = Routes.ProductEdit,

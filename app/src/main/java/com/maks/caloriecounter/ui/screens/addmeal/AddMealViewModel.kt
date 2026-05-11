@@ -51,6 +51,45 @@ class AddMealViewModel(
 
     fun updateMealType(value: MealType) = screenState.update { it.copy(mealType = value) }
 
+    fun onScanCancelled() = screenState.update { it.copy(snackbarMessage = "Сканирование отменено") }
+
+    fun onBarcodeNotRecognized() = screenState.update { it.copy(snackbarMessage = "Код не распознан") }
+
+    fun onScannerUnavailable(message: String = "Сканер недоступен") = screenState.update { it.copy(snackbarMessage = message) }
+
+    fun clearSnackbarMessage() = screenState.update { it.copy(snackbarMessage = null) }
+
+    fun findScannedProduct(rawValue: String, format: String?) {
+        val barcode = rawValue.trim()
+        if (barcode.isBlank()) {
+            onBarcodeNotRecognized()
+            return
+        }
+        viewModelScope.launch {
+            val product = productRepository.findProductByBarcode(barcode)
+            if (product == null) {
+                screenState.update {
+                    it.copy(
+                        pendingScannedBarcode = PendingScannedBarcode(rawValue = barcode, format = format),
+                        snackbarMessage = "Продукт не найден",
+                    )
+                }
+            } else {
+                screenState.update {
+                    it.copy(
+                        selectedProduct = product,
+                        grams = it.grams.ifBlank { "100" },
+                        error = null,
+                        pendingScannedBarcode = null,
+                        snackbarMessage = "Продукт найден",
+                    )
+                }
+            }
+        }
+    }
+
+    fun dismissProductNotFound() = screenState.update { it.copy(pendingScannedBarcode = null) }
+    
     fun save() {
         val state = uiState.value
         val product = state.selectedProduct ?: run {

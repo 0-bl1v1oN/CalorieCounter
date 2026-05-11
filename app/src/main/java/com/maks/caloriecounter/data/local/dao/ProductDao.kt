@@ -32,6 +32,12 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun findProductByName(name: String): ProductEntity?
 
+    @Query("SELECT * FROM products WHERE barcode = :barcode LIMIT 1")
+    suspend fun findProductByBarcode(barcode: String): ProductEntity?
+
+    @Query("SELECT * FROM products WHERE barcode = :barcode LIMIT 1")
+    fun observeProductByBarcode(barcode: String): Flow<ProductEntity?>
+
     @Query("UPDATE products SET isFavorite = :isFavorite WHERE id = :productId")
     suspend fun updateFavorite(productId: Long, isFavorite: Boolean)
 

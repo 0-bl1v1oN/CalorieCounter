@@ -11,7 +11,7 @@ import com.maks.caloriecounter.data.local.entity.ProductEntity
 
 @Database(
     entities = [ProductEntity::class, MealEntryEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -23,6 +23,14 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE products ADD COLUMN isFavorite INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE products ADD COLUMN lastUsedAt INTEGER")
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE products ADD COLUMN barcode TEXT")
+                db.execSQL("ALTER TABLE products ADD COLUMN barcodeFormat TEXT")
+                db.execSQL("ALTER TABLE products ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'")
             }
         }
     }
