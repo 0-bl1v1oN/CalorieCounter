@@ -2,10 +2,14 @@ package com.maks.caloriecounter.ui.screens.addmeal
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.maks.caloriecounter.data.remote.openfoodfacts.OpenFoodFactsRemoteDataSource
+import com.maks.caloriecounter.data.remote.openfoodfacts.OpenFoodFactsRemoteResult
+import com.maks.caloriecounter.data.remote.openfoodfacts.toProduct
 import com.maks.caloriecounter.data.repository.MealRepository
 import com.maks.caloriecounter.data.repository.ProductRepository
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.Product
+import com.maks.caloriecounter.domain.util.BarcodeNormalizer
 import java.text.Collator
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +24,7 @@ class AddMealViewModel(
     private val date: String,
     private val productRepository: ProductRepository,
     private val mealRepository: MealRepository,
+    private val openFoodFactsRemoteDataSource: OpenFoodFactsRemoteDataSource,
 ) : ViewModel() {
     private val screenState = MutableStateFlow(AddMealUiState())
 
@@ -66,11 +71,18 @@ class AddMealViewModel(
             return
         }
         viewModelScope.launch {
-            val product = productRepository.findProductByBarcode(barcode)
+            val normalizedCandidates = BarcodeNormalizer.candidates(barcode, format)
+            val localCandidates = buildList {
+                add(barcode)
+                addAll(normalizedCandidates)
+            }.distinct()
+            val product = productRepository.findProductByBarcodes(localCandidates)
             if (product == null) {
                 screenState.update {
                     it.copy(
-                        pendingScannedBarcode = PendingScannedBarcode(rawValue = barcode, format = format),
+                        pendingScannedBarcode = PendingScannedBarcode(rawValue = barcode, format = format, candidates = normalizedCandidates),
+                        openFoodFactsProduct = null,
+                        openFoodFactsError = null,
                         snackbarMessage = "Продукт не найден",
                     )
                 }
@@ -81,6 +93,8 @@ class AddMealViewModel(
                         grams = it.grams.ifBlank { "100" },
                         error = null,
                         pendingScannedBarcode = null,
+                        openFoodFactsProduct = null,
+                        openFoodFactsError = null,
                         snackbarMessage = "Продукт найден",
                     )
                 }
@@ -88,7 +102,95 @@ class AddMealViewModel(
         }
     }
 
-    fun dismissProductNotFound() = screenState.update { it.copy(pendingScannedBarcode = null) }
+    fun dismissProductNotFound() = screenState.update { it.copy(pendingScannedBarcode = null, openFoodFactsError = null) }
+
+    fun lookupOpenFoodFacts() {
+        val pending = screenState.value.pendingScannedBarcode ?: return
+        if (pending.candidates.isEmpty()) {
+            screenState.update { it.copy(openFoodFactsError = "Не удалось извлечь GTIN для поиска в Open Food Facts") }
+            return
+        }
+        viewModelScope.launch {
+            screenState.update { it.copy(isOpenFoodFactsLoading = true, snackbarMessage = "Ищем продукт…", openFoodFactsError = null) }
+            for (candidate in pending.candidates) {
+                when (val result = openFoodFactsRemoteDataSource.findProduct(candidate)) {
+                    is OpenFoodFactsRemoteResult.Found -> {
+                        screenState.update {
+                            it.copy(
+                                isOpenFoodFactsLoading = false,
+                                openFoodFactsProduct = result.product,
+                                openFoodFactsError = null,
+                            )
+                        }
+                        return@launch
+                    }
+                    is OpenFoodFactsRemoteResult.Incomplete -> {
+                        screenState.update {
+                            it.copy(
+                                isOpenFoodFactsLoading = false,
+                                openFoodFactsProduct = null,
+                                openFoodFactsError = "В Open Food Facts нет полного КБЖУ для продукта. Создайте продукт вручную или отредактируйте данные.",
+                            )
+                        }
+                        return@launch
+                    }
+                    OpenFoodFactsRemoteResult.NoConnection -> {
+                        screenState.update {
+                            it.copy(
+                                isOpenFoodFactsLoading = false,
+                                openFoodFactsError = "Нет подключения к интернету",
+                            )
+                        }
+                        return@launch
+                    }
+                    OpenFoodFactsRemoteResult.ApiError -> {
+                        screenState.update {
+                            it.copy(
+                                isOpenFoodFactsLoading = false,
+                                openFoodFactsError = "Не удалось получить данные продукта",
+                            )
+                        }
+                        return@launch
+                    }
+                    OpenFoodFactsRemoteResult.NotFound -> Unit
+                }
+            }
+            screenState.update {
+                it.copy(
+                    isOpenFoodFactsLoading = false,
+                    openFoodFactsError = "Продукт не найден в Open Food Facts",
+                )
+            }
+        }
+    }
+
+    fun dismissOpenFoodFactsProduct() = screenState.update { it.copy(openFoodFactsProduct = null) }
+
+    fun saveOpenFoodFactsProductAndAdd() {
+        val state = screenState.value
+        val pending = state.pendingScannedBarcode ?: return
+        val openFoodFactsProduct = state.openFoodFactsProduct ?: return
+        viewModelScope.launch {
+            val productId = productRepository.upsertProductByName(
+                openFoodFactsProduct.toProduct(rawBarcode = pending.rawValue, barcodeFormat = pending.format),
+            )
+            val product = productRepository.getProduct(productId)
+            if (product == null) {
+                screenState.update { it.copy(openFoodFactsError = "Не удалось сохранить продукт") }
+                return@launch
+            }
+            screenState.update {
+                it.copy(
+                    selectedProduct = product,
+                    grams = it.grams.ifBlank { "100" },
+                    pendingScannedBarcode = null,
+                    openFoodFactsProduct = null,
+                    openFoodFactsError = null,
+                    snackbarMessage = "Продукт сохранён",
+                )
+            }
+        }
+    }
     
     fun save() {
         val state = uiState.value

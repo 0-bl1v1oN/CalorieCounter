@@ -89,9 +89,12 @@ class ProductsViewModel(
         }
     }
 
-    fun startAddProduct(scannedBarcode: String? = null, barcodeFormat: String? = null) = screenState.update {
+    fun startAddProduct(scannedBarcode: String? = null, barcodeFormat: String? = null, initialForm: ProductFormState? = null) = screenState.update {
         it.copy(
-            form = ProductFormState(barcode = scannedBarcode?.takeIf { barcode -> barcode.isNotBlank() }, barcodeFormat = barcodeFormat),
+            form = (initialForm ?: ProductFormState()).copy(
+                barcode = scannedBarcode?.takeIf { barcode -> barcode.isNotBlank() },
+                barcodeFormat = barcodeFormat,
+            ),
             editingProductId = null,
             errorMessage = null,
             isFormSaved = false,

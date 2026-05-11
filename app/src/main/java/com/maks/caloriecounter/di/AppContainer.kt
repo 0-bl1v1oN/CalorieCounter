@@ -7,6 +7,8 @@ import androidx.room.Room
 import com.maks.caloriecounter.data.importer.ProductCsvImporter
 import com.maks.caloriecounter.data.local.AppDatabase
 import com.maks.caloriecounter.data.preferences.UserPreferencesDataStore
+import com.maks.caloriecounter.data.remote.openfoodfacts.OpenFoodFactsApi
+import com.maks.caloriecounter.data.remote.openfoodfacts.OpenFoodFactsRemoteDataSource
 import com.maks.caloriecounter.data.repository.MealRepository
 import com.maks.caloriecounter.data.repository.ProductRepository
 import com.maks.caloriecounter.data.repository.SettingsRepository
@@ -19,6 +21,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import okhttp3.OkHttpClient
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class AppContainer(context: Context) {
     private val appContext = context.applicationContext
@@ -33,6 +38,24 @@ class AppContainer(context: Context) {
     val mealRepository = MealRepository(database.mealEntryDao())
     val settingsRepository = SettingsRepository(UserPreferencesDataStore(appContext))
 
+    private val openFoodFactsClient = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            val request = chain.request()
+                .newBuilder()
+                .header("User-Agent", "CalorieCounter/1.0 (Android; personal app)")
+                .build()
+            chain.proceed(request)
+        }
+        .build()
+
+    private val openFoodFactsApi: OpenFoodFactsApi = Retrofit.Builder()
+        .baseUrl(OpenFoodFactsApi.BASE_URL)
+        .client(openFoodFactsClient)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+        .create(OpenFoodFactsApi::class.java)
+
+    private val openFoodFactsRemoteDataSource = OpenFoodFactsRemoteDataSource(openFoodFactsApi)
     init {
         applicationScope.launch {
             ProductCsvImporter(appContext, productDao).importIfNeeded()
@@ -44,7 +67,7 @@ class AppContainer(context: Context) {
     }
 
     fun addMealViewModelFactory(date: String): ViewModelProvider.Factory = viewModelFactory {
-        AddMealViewModel(date, productRepository, mealRepository)
+        AddMealViewModel(date, productRepository, mealRepository, openFoodFactsRemoteDataSource)
     }
 
     fun productsViewModelFactory(date: String): ViewModelProvider.Factory = viewModelFactory {

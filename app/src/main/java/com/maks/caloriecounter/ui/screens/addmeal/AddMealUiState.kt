@@ -1,5 +1,6 @@
 package com.maks.caloriecounter.ui.screens.addmeal
 
+import com.maks.caloriecounter.data.remote.openfoodfacts.OpenFoodFactsProduct
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.Product
 
@@ -12,6 +13,7 @@ enum class AddMealProductFilter(val title: String) {
 data class PendingScannedBarcode(
     val rawValue: String,
     val format: String?,
+    val candidates: List<String> = listOf(rawValue),
 )
 
 data class AddMealUiState(
@@ -26,5 +28,8 @@ data class AddMealUiState(
     val error: String? = null,
     val snackbarMessage: String? = null,
     val pendingScannedBarcode: PendingScannedBarcode? = null,
+    val isOpenFoodFactsLoading: Boolean = false,
+    val openFoodFactsProduct: OpenFoodFactsProduct? = null,
+    val openFoodFactsError: String? = null,
     val saved: Boolean = false,
 )

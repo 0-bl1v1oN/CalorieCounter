@@ -14,6 +14,14 @@ class ProductRepository(private val productDao: ProductDao) {
 
     suspend fun findProductByBarcode(barcode: String): Product? = productDao.findProductByBarcode(barcode.trim())?.toDomain()
     
+    suspend fun findProductByBarcodes(barcodes: List<String>): Product? {
+        for (barcode in barcodes.map { it.trim() }.filter { it.isNotBlank() }.distinct()) {
+            val product = findProductByBarcode(barcode)
+            if (product != null) return product
+        }
+        return null
+    }
+    
     suspend fun insertProduct(product: Product): Long = productDao.insertProduct(product.toEntity())
 
     suspend fun upsertProductByName(product: Product): Long {
@@ -29,7 +37,7 @@ class ProductRepository(private val productDao: ProductDao) {
                     lastUsedAt = existing.lastUsedAt,
                     barcode = product.barcode ?: existing.barcode,
                     barcodeFormat = product.barcodeFormat ?: existing.barcodeFormat,
-                    source = existing.source,
+                    source = product.source.takeIf { it != "manual" } ?: existing.source,
                 ),
             )
             existing.id

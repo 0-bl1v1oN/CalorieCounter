@@ -28,6 +28,7 @@ import com.maks.caloriecounter.domain.util.DateUtils
 import com.maks.caloriecounter.ui.screens.addmeal.AddMealScreen
 import com.maks.caloriecounter.ui.screens.history.HistoryScreen
 import com.maks.caloriecounter.ui.screens.products.ProductFormScreen
+import com.maks.caloriecounter.ui.screens.products.ProductFormState
 import com.maks.caloriecounter.ui.screens.products.ProductsScreen
 import com.maks.caloriecounter.ui.screens.settings.SettingsScreen
 import com.maks.caloriecounter.ui.screens.today.TodayScreen
@@ -93,7 +94,7 @@ fun AppNavigation(appContainer: AppContainer) {
                         todaySnackbarMessage = "Добавлено в дневник"
                         navController.popBackStack()
                     },
-                    onCreateProduct = { barcode, format -> navController.navigate(Routes.productAdd(barcode, format)) },
+                    onCreateProduct = { barcode, format, product -> navController.navigate(if (product == null) Routes.productAdd(barcode, format) else Routes.productAdd(barcode, format, product)) },
                 )
             }
             composable(Routes.Products) {
@@ -109,10 +110,24 @@ fun AppNavigation(appContainer: AppContainer) {
                 arguments = listOf(
                     navArgument("scannedBarcode") { type = NavType.StringType; nullable = true; defaultValue = null },
                     navArgument("barcodeFormat") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("name") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("calories") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("protein") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("fat") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("carbs") { type = NavType.StringType; nullable = true; defaultValue = null },
+                    navArgument("source") { type = NavType.StringType; nullable = true; defaultValue = null },
                 ),
             ) { entry ->
                 val scannedBarcode = entry.arguments?.getString("scannedBarcode")?.let(Uri::decode)?.takeIf { it.isNotBlank() }
                 val barcodeFormat = entry.arguments?.getString("barcodeFormat")?.let(Uri::decode)?.takeIf { it.isNotBlank() }
+                val initialForm = ProductFormState(
+                    name = entry.arguments?.getString("name")?.let(Uri::decode).orEmpty(),
+                    calories = entry.arguments?.getString("calories")?.let(Uri::decode).orEmpty(),
+                    protein = entry.arguments?.getString("protein")?.let(Uri::decode).orEmpty(),
+                    fat = entry.arguments?.getString("fat")?.let(Uri::decode).orEmpty(),
+                    carbs = entry.arguments?.getString("carbs")?.let(Uri::decode).orEmpty(),
+                    source = entry.arguments?.getString("source")?.let(Uri::decode)?.takeIf { it.isNotBlank() } ?: "manual",
+                ).takeIf { it.name.isNotBlank() || it.calories.isNotBlank() || it.protein.isNotBlank() || it.fat.isNotBlank() || it.carbs.isNotBlank() }
                 val vm: com.maks.caloriecounter.ui.screens.products.ProductsViewModel = viewModel(key = "product-add-$selectedDate-${scannedBarcode.orEmpty()}", factory = appContainer.productsViewModelFactory(selectedDate))
                 ProductFormScreen(
                     vm,
@@ -120,6 +135,7 @@ fun AppNavigation(appContainer: AppContainer) {
                     onCancel = { navController.popBackStack() },
                     scannedBarcode = scannedBarcode,
                     barcodeFormat = barcodeFormat,
+                    initialForm = initialForm,
                 )
             }
             composable(

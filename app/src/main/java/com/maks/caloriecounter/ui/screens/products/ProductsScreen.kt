@@ -323,12 +323,13 @@ fun ProductFormScreen(
     productId: Long? = null,
     scannedBarcode: String? = null,
     barcodeFormat: String? = null,
+    initialForm: ProductFormState? = null,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(productId, scannedBarcode, barcodeFormat) {
-        if (productId == null) viewModel.startAddProduct(scannedBarcode, barcodeFormat) else viewModel.loadProductForEdit(productId)
+    LaunchedEffect(productId, scannedBarcode, barcodeFormat, initialForm) {
+        if (productId == null) viewModel.startAddProduct(scannedBarcode, barcodeFormat, initialForm) else viewModel.loadProductForEdit(productId)
     }
 
     LaunchedEffect(state.isFormSaved) {

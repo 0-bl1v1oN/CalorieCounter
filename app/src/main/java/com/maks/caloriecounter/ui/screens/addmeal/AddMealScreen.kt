@@ -49,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.maks.caloriecounter.data.remote.openfoodfacts.OpenFoodFactsProduct
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.Product
 import com.maks.caloriecounter.ui.components.AppTextField
@@ -67,7 +68,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 fun AddMealScreen(
     viewModel: AddMealViewModel,
     onSaved: () -> Unit,
-    onCreateProduct: (String?, String?) -> Unit,
+    onCreateProduct: (String?, String?, OpenFoodFactsProduct?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -96,7 +97,7 @@ fun AddMealScreen(
             ProductPickerContent(
                 state = state,
                 viewModel = viewModel,
-                onCreateProduct = { onCreateProduct(null, null) },
+                onCreateProduct = { onCreateProduct(null, null, null) },
                 onScanBarcode = {
                     scanner.startScan()
                         .addOnSuccessListener { barcode ->
@@ -122,12 +123,26 @@ fun AddMealScreen(
     }
 
     ProductNotFoundDialog(
-        pendingBarcode = state.pendingScannedBarcode,
+        pendingBarcode = if (state.openFoodFactsProduct == null) state.pendingScannedBarcode else null,
+        isLoading = state.isOpenFoodFactsLoading,
+        errorMessage = state.openFoodFactsError,
+        onLookup = viewModel::lookupOpenFoodFacts,
         onCreate = { pending ->
             viewModel.dismissProductNotFound()
-            onCreateProduct(pending.rawValue, pending.format)
+            onCreateProduct(pending.rawValue, pending.format, null)
         },
         onDismiss = viewModel::dismissProductNotFound,
+    )
+
+    OpenFoodFactsProductDialog(
+        product = state.openFoodFactsProduct,
+        onSaveAndAdd = viewModel::saveOpenFoodFactsProductAndAdd,
+        onEdit = { product ->
+            val pending = state.pendingScannedBarcode
+            viewModel.dismissOpenFoodFactsProduct()
+            onCreateProduct(pending?.rawValue, pending?.format, product)
+        },
+        onDismiss = viewModel::dismissOpenFoodFactsProduct,
     )
 }
 
@@ -407,6 +422,9 @@ private fun QuickAddContent(
 @Composable
 private fun ProductNotFoundDialog(
     pendingBarcode: PendingScannedBarcode?,
+    isLoading: Boolean,
+    errorMessage: String?,
+    onLookup: () -> Unit,
     onCreate: (PendingScannedBarcode) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -414,9 +432,50 @@ private fun ProductNotFoundDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Продукт не найден") },
-        text = { Text("Этот штрихкод пока не привязан к продукту. Создать новый продукт?") },
-        confirmButton = { TextButton(onClick = { onCreate(pending) }) { Text("Создать") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Этого кода нет в локальной базе. Попробовать найти продукт в Open Food Facts?")
+                if (isLoading) Text("Ищем продукт…", color = MaterialTheme.colorScheme.primary)
+                errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            }
+        },
+        confirmButton = { TextButton(onClick = onLookup, enabled = !isLoading) { Text("Найти") } },
+        dismissButton = {
+            Row {
+                TextButton(onClick = { onCreate(pending) }, enabled = !isLoading) { Text("Создать вручную") }
+                TextButton(onClick = onDismiss, enabled = !isLoading) { Text("Отмена") }
+            }
+        },
+    )
+}
+
+@Composable
+private fun OpenFoodFactsProductDialog(
+    product: OpenFoodFactsProduct?,
+    onSaveAndAdd: () -> Unit,
+    onEdit: (OpenFoodFactsProduct) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val foundProduct = product ?: return
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Продукт найден") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(foundProduct.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "${foundProduct.caloriesPer100g.kcal()} ккал • Б ${foundProduct.proteinPer100g.grams()} • Ж ${foundProduct.fatPer100g.grams()} • У ${foundProduct.carbsPer100g.grams()} на 100 г",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onSaveAndAdd) { Text("Сохранить и добавить") } },
+        dismissButton = {
+            Row {
+                TextButton(onClick = { onEdit(foundProduct) }) { Text("Редактировать") }
+                TextButton(onClick = onDismiss) { Text("Отмена") }
+            }
+        },
     )
 }
 
