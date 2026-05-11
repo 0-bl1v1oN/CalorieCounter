@@ -1,6 +1,7 @@
 package com.maks.caloriecounter.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +40,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
+import com.maks.caloriecounter.R
 import com.maks.caloriecounter.domain.model.MealEntryDetails
 
 @Composable
@@ -152,7 +155,11 @@ private fun FoodAvatar() {
             .border(BorderStroke(1.dp, Color(0xFFFF6C9A).copy(alpha = 0.46f)), RoundedCornerShape(24.dp)),
         contentAlignment = Alignment.Center,
     ) {
-        Text("🍽", style = MaterialTheme.typography.headlineSmall)
+        Image(
+            painter = painterResource(R.drawable.today_product_plate),
+            contentDescription = "Иконка продукта",
+            modifier = Modifier.size(42.dp),
+        )
     }
 }
 

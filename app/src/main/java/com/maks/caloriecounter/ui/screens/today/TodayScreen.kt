@@ -1,6 +1,7 @@
 package com.maks.caloriecounter.ui.screens.today
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,6 +48,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.painterResource
+import com.maks.caloriecounter.R
 import com.maks.caloriecounter.domain.model.DailySummary
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.UserSettings
@@ -224,7 +227,11 @@ private fun CalorieRing(summary: DailySummary, settings: UserSettings) {
             trackColor = Color.Transparent,
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("🔥", style = MaterialTheme.typography.titleLarge)
+            Image(
+                painter = painterResource(R.drawable.today_calories_fire),
+                contentDescription = "Калории",
+                modifier = Modifier.size(28.dp),
+            )
             Text("ККАЛ", style = MaterialTheme.typography.labelLarge, color = MutedText)
             Text(summary.calories.kcal(), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black, color = Color.White)
             Text("/ ${settings.calorieGoal}", style = MaterialTheme.typography.titleMedium, color = MutedText)
@@ -270,9 +277,30 @@ private fun MacroGlassList(summary: DailySummary, settings: UserSettings) {
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            MacroProgressRow("Белки", "Цель: ${settings.proteinGoal} г", summary.protein, settings.proteinGoal, TodayPink)
-            MacroProgressRow("Жиры", "Цель: ${settings.fatGoal} г", summary.fat, settings.fatGoal, Amber)
-            MacroProgressRow("Углеводы", "Цель: ${settings.carbsGoal} г", summary.carbs, settings.carbsGoal, PinkSoft)
+            MacroProgressRow(
+                title = "Белки",
+                subtitle = "Цель: ${settings.proteinGoal} г",
+                value = summary.protein,
+                goal = settings.proteinGoal,
+                color = TodayPink,
+                iconRes = R.drawable.today_macro_protein,
+            )
+            MacroProgressRow(
+                title = "Жиры",
+                subtitle = "Цель: ${settings.fatGoal} г",
+                value = summary.fat,
+                goal = settings.fatGoal,
+                color = Amber,
+                iconRes = R.drawable.today_macro_fat,
+            )
+            MacroProgressRow(
+                title = "Углеводы",
+                subtitle = "Цель: ${settings.carbsGoal} г",
+                value = summary.carbs,
+                goal = settings.carbsGoal,
+                color = PinkSoft,
+                iconRes = R.drawable.today_macro_carbs,
+            )
         }
     }
 }
@@ -284,6 +312,7 @@ private fun MacroProgressRow(
     value: Double,
     goal: Int,
     color: Color,
+    iconRes: Int,
 ) {
     val percent = if (goal <= 0) 0 else ((value / goal) * 100).toInt()
     Row(
@@ -299,7 +328,11 @@ private fun MacroProgressRow(
                 .border(BorderStroke(1.dp, color.copy(alpha = 0.38f)), RoundedCornerShape(18.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Text(title.take(1), style = MaterialTheme.typography.titleLarge, color = color, fontWeight = FontWeight.Bold)
+            Image(
+                painter = painterResource(iconRes),
+                contentDescription = title,
+                modifier = Modifier.size(34.dp),
+            )
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
