@@ -8,6 +8,7 @@ object DateUtils {
     private const val STORAGE_PATTERN = "yyyy-MM-dd"
     private val storageFormat = SimpleDateFormat(STORAGE_PATTERN, Locale.US)
     private val displayFormat = SimpleDateFormat("dd.MM.yyyy", Locale.forLanguageTag("ru"))
+    private val dayWithWeekdayFormat = SimpleDateFormat("d MMMM, EEEE", Locale.forLanguageTag("ru"))
 
     fun today(): String = storageFormat.format(Calendar.getInstance().time)
 
@@ -20,5 +21,9 @@ object DateUtils {
 
     fun display(date: String): String = runCatching {
         displayFormat.format(requireNotNull(storageFormat.parse(date)))
+    }.getOrDefault(date)
+
+    fun displayDayWithWeekday(date: String): String = runCatching {
+        dayWithWeekdayFormat.format(requireNotNull(storageFormat.parse(date)))
     }.getOrDefault(date)
 }

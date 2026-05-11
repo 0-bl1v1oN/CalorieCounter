@@ -78,7 +78,11 @@ fun ProductCard(
                 onClick = onToggleFavorite,
                 modifier = Modifier.size(36.dp),
                 colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = if (product.isFavorite) Color(0xFFE8C56F) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    contentColor = if (product.isFavorite) {
+                        Color(0xFFD7B56D)
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
+                    },
                 ),
             ) {
                 Icon(
@@ -87,6 +91,7 @@ fun ProductCard(
                     modifier = Modifier.size(22.dp),
                 )
             }
+            Spacer(Modifier.width(6.dp))
             FilledTonalIconButton(
                 onClick = onQuickAdd,
                 modifier = Modifier.size(36.dp),

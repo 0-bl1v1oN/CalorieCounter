@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -90,12 +91,12 @@ fun ProductsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 120.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 148.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item { ProductsHeader(state, viewModel) }
 
-            if (state.selectedFilter == ProductFilter.All && state.favoriteProducts.isNotEmpty()) {
+            if (state.selectedFilter == ProductFilter.All && state.favoriteProducts.size >= 2) {
                 item { FavoritesBlock(state.favoriteProducts, viewModel) }
             }
 
@@ -215,12 +216,12 @@ private fun FavoritesBlock(favorites: List<Product>, viewModel: ProductsViewMode
 private fun FavoriteProductCard(product: Product, onClick: () -> Unit) {
     Card(
         onClick = onClick,
-        modifier = Modifier.width(156.dp),
+        modifier = Modifier.width(140.dp),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
@@ -231,7 +232,7 @@ private fun FavoriteProductCard(product: Product, onClick: () -> Unit) {
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                "${product.caloriesPer100g.kcal()} ккал",
+                "${product.caloriesPer100g.kcal()} ккал / 100 г",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -359,9 +360,10 @@ fun ProductFormScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(innerPadding)
+                .imePadding(),
+            contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item {
                 Text(
@@ -370,11 +372,59 @@ fun ProductFormScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-        item { AppTextField(state.form.name, viewModel::updateFormName, "Название", Modifier.fillMaxWidth(), placeholder = "Например: Гречка варёная") }
-            item { AppTextField(state.form.calories, viewModel::updateFormCalories, "Калории на 100 г", Modifier.fillMaxWidth(), number = true, placeholder = "Например: 110", suffix = "ккал") }
-            item { AppTextField(state.form.protein, viewModel::updateFormProtein, "Белки на 100 г", Modifier.fillMaxWidth(), number = true, placeholder = "Например: 3.6", suffix = "г") }
-            item { AppTextField(state.form.fat, viewModel::updateFormFat, "Жиры на 100 г", Modifier.fillMaxWidth(), number = true, placeholder = "Например: 1.1", suffix = "г") }
-            item { AppTextField(state.form.carbs, viewModel::updateFormCarbs, "Углеводы на 100 г", Modifier.fillMaxWidth(), number = true, placeholder = "Например: 20.5", suffix = "г") }
+        item {
+                AppTextField(
+                    value = state.form.name,
+                    onValueChange = viewModel::updateFormName,
+                    label = "Название",
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = "Например: Гречка варёная",
+                )
+            }
+            item {
+                AppTextField(
+                    value = state.form.calories,
+                    onValueChange = viewModel::updateFormCalories,
+                    label = "Калории на 100 г",
+                    modifier = Modifier.fillMaxWidth(),
+                    number = true,
+                    placeholder = "Например: 110",
+                    suffix = "ккал",
+                )
+            }
+            item {
+                AppTextField(
+                    value = state.form.protein,
+                    onValueChange = viewModel::updateFormProtein,
+                    label = "Белки на 100 г",
+                    modifier = Modifier.fillMaxWidth(),
+                    number = true,
+                    placeholder = "Например: 3.6",
+                    suffix = "г",
+                )
+            }
+            item {
+                AppTextField(
+                    value = state.form.fat,
+                    onValueChange = viewModel::updateFormFat,
+                    label = "Жиры на 100 г",
+                    modifier = Modifier.fillMaxWidth(),
+                    number = true,
+                    placeholder = "Например: 1.1",
+                    suffix = "г",
+                )
+            }
+            item {
+                AppTextField(
+                    value = state.form.carbs,
+                    onValueChange = viewModel::updateFormCarbs,
+                    label = "Углеводы на 100 г",
+                    modifier = Modifier.fillMaxWidth(),
+                    number = true,
+                    placeholder = "Например: 20.5",
+                    suffix = "г",
+                )
+            }
             state.errorMessage?.let { message ->
                 item { Text(message, color = MaterialTheme.colorScheme.error) }
             }
