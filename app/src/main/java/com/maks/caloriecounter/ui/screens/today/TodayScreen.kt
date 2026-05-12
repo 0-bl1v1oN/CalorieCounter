@@ -212,18 +212,18 @@ private fun DailyProgressCard(
 @Composable
 private fun CalorieRing(summary: DailySummary, settings: UserSettings) {
     val calorieProgress = progress(summary.calories, settings.calorieGoal.toDouble())
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(148.dp)) {
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(152.dp)) {
         CircularProgressIndicator(
             progress = { 1f },
-            modifier = Modifier.size(148.dp),
-            strokeWidth = 14.dp,
+            modifier = Modifier.size(152.dp),
+            strokeWidth = 13.dp,
             color = TodayAccent.copy(alpha = 0.14f),
             trackColor = Color.Transparent,
         )
         CircularProgressIndicator(
             progress = { calorieProgress },
-            modifier = Modifier.size(148.dp),
-            strokeWidth = 14.dp,
+            modifier = Modifier.size(152.dp),
+            strokeWidth = 13.dp,
             color = TodayAccent,
             trackColor = Color.Transparent,
         )
@@ -231,12 +231,19 @@ private fun CalorieRing(summary: DailySummary, settings: UserSettings) {
             Image(
                 painter = painterResource(R.drawable.today_calories_fire),
                 contentDescription = "Калории",
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(18.dp),
             )
-            Text("ККАЛ", style = MaterialTheme.typography.labelLarge, color = MutedText)
-            Text(summary.calories.kcal(), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black, color = Color.White)
+            Text("ККАЛ", style = MaterialTheme.typography.labelMedium, color = MutedText)
+            Text(
+                summary.calories.kcal(),
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 38.sp, lineHeight = 40.sp),
+                fontWeight = FontWeight.Black,
+                color = Color.White,
+                maxLines = 1,
+                softWrap = false,
+            )
             Text("/ ${settings.calorieGoal}", style = MaterialTheme.typography.titleMedium, color = MutedText)
-            Text("ккал", style = MaterialTheme.typography.bodyMedium, color = MutedText)
+            Text("ккал", style = MaterialTheme.typography.bodySmall, color = MutedText)
         }
     }
 }
@@ -283,7 +290,7 @@ private fun MacroGlassList(summary: DailySummary, settings: UserSettings) {
                 subtitle = "Цель: ${settings.proteinGoal} г",
                 value = summary.protein,
                 goal = settings.proteinGoal,
-                color = MacroAccent,
+                color = TodayPink,
                 iconRes = R.drawable.today_macro_protein,
             )
             MacroProgressRow(
@@ -291,7 +298,7 @@ private fun MacroGlassList(summary: DailySummary, settings: UserSettings) {
                 subtitle = "Цель: ${settings.fatGoal} г",
                 value = summary.fat,
                 goal = settings.fatGoal,
-                color = MacroAccent,
+                color = Amber,
                 iconRes = R.drawable.today_macro_fat,
             )
             MacroProgressRow(
@@ -299,7 +306,7 @@ private fun MacroGlassList(summary: DailySummary, settings: UserSettings) {
                 subtitle = "Цель: ${settings.carbsGoal} г",
                 value = summary.carbs,
                 goal = settings.carbsGoal,
-                color = MacroAccent,
+                color = PinkSoft,
                 iconRes = R.drawable.today_macro_carbs,
             )
         }
@@ -342,7 +349,15 @@ private fun MacroProgressRow(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(title, style = MaterialTheme.typography.titleMedium, color = PrimaryText, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = PrimaryText,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MutedText, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Text(
@@ -464,10 +479,12 @@ private val TodayBackgroundBrush = Brush.verticalGradient(
         Color(0xFF05070A),
     ),
 )
-private val TodayAccent = Color(0xFFFF8A5B)
-private val TodayAccentDark = Color(0xFFE95F3E)
-private val MacroAccent = Color(0xFFD2D6DF)
+private val TodayAccent = Color(0xFFFF6C9A)
+private val TodayAccentDark = Color(0xFFE92561)
+private val TodayPink = Color(0xFFFF6C9A)
+private val PinkSoft = Color(0xFFFF8BB1)
+private val Amber = Color(0xFFFFA51F)
 private val PrimaryText = Color(0xFFF4F6FA)
-private val MutedText = Color(0xFFB9BEC9)
+private val MutedText = Color(0xFFA7A9B2)
 private val GlassDark = Color.White.copy(alpha = 0.055f)
 private val GlassStroke = Color.White.copy(alpha = 0.12f)

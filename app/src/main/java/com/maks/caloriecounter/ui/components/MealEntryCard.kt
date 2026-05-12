@@ -70,7 +70,7 @@ fun MealEntryCard(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                hhorizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.Top,
             ) {
                 FoodAvatar()
@@ -106,9 +106,9 @@ fun MealEntryCard(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MacroPill(label = "Б", value = entry.protein, modifier = Modifier.weight(1f))
-                MacroPill(label = "Ж", value = entry.fat, modifier = Modifier.weight(1f))
-                MacroPill(label = "У", value = entry.carbs, modifier = Modifier.weight(1f))
+                MacroPill(label = "Б", value = entry.protein, color = ProteinPink, modifier = Modifier.weight(1f))
+                MacroPill(label = "Ж", value = entry.fat, color = FatAmber, modifier = Modifier.weight(1f))
+                MacroPill(label = "У", value = entry.carbs, color = CarbsPink, modifier = Modifier.weight(1f))
             }
 
             Row(
@@ -197,20 +197,21 @@ private fun FoodAvatar() {
 private fun MacroPill(
     label: String,
     value: Double,
+    color: Color,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(Color.White.copy(alpha = 0.045f))
-            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.07f)), RoundedCornerShape(12.dp))
+            .background(color.copy(alpha = 0.10f))
+            .border(BorderStroke(1.dp, color.copy(alpha = 0.18f)), RoundedCornerShape(12.dp))
             .padding(horizontal = 6.dp, vertical = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = "$label ${value.grams()}",
             style = MaterialTheme.typography.labelLarge,
-            color = MacroText,
+            color = color,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
             softWrap = false,
@@ -245,10 +246,12 @@ private fun SecondaryActionButton(
 }
 
 private val CardCornerRadius = 22.dp
-private val AccentColor = Color(0xFFFF8A5B)
+pprivate val AccentColor = Color(0xFFFF6C9A)
+private val ProteinPink = Color(0xFFFF6C9A)
+private val FatAmber = Color(0xFFFFA51F)
+private val CarbsPink = Color(0xFFFF8BB1)
 private val PrimaryText = Color(0xFFF4F6FA)
-private val SecondaryText = Color(0xFFB9BEC9)
-private val MacroText = Color(0xFFD5D9E1)
+private val SecondaryText = Color(0xFFA7A9B2)
 private val DangerText = Color(0xFFFF7C72)
 private val CardStroke = Color.White.copy(alpha = 0.085f)
 private val CardBrush = Brush.linearGradient(
