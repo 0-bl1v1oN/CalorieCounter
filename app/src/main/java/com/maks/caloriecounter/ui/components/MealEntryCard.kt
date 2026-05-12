@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,6 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -38,6 +38,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.Hyphens
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
@@ -56,62 +58,90 @@ fun MealEntryCard(
     
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(26.dp),
+        shape = RoundedCornerShape(CardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)),
+        border = BorderStroke(1.dp, CardStroke),
     ) {
         Column(
             modifier = Modifier
-                .background(Brush.linearGradient(listOf(Color(0xFF171B22).copy(alpha = 0.98f), Color(0xFF0E1117).copy(alpha = 0.98f))))
-                .padding(16.dp),
+                .background(CardBrush)
+                .padding(horizontal = 14.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                hhorizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top,
             ) {
                 FoodAvatar()
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalArrangement = Arrangement.spacedBy(7.dp),
                 ) {
                     Text(
                         text = entry.product.name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            lineBreak = LineBreak.Heading,
+                            hyphens = Hyphens.None,
+                        ),
+                        fontWeight = FontWeight.SemiBold,
+                        color = PrimaryText,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = "${entry.entry.grams.grams()} г · ${entry.calories.kcal()} ккал",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFFA7A9B2),
+                        text = "${entry.entry.grams.grams()} г • ${entry.calories.kcal()} ккал",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = SecondaryText,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        MacroChip("Б", entry.protein, Color(0xFFFF6C9A))
-                        MacroChip("Ж", entry.fat, Color(0xFFFFA51F))
-                        MacroChip("У", entry.carbs, Color(0xFFFF8BB1))
-                    }
                 }
-                RoundActionButton(onClick = { isEditing = !isEditing }, accent = Color.White.copy(alpha = 0.78f)) {
+                }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 58.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                MacroPill(label = "Б", value = entry.protein, modifier = Modifier.weight(1f))
+                MacroPill(label = "Ж", value = entry.fat, modifier = Modifier.weight(1f))
+                MacroPill(label = "У", value = entry.carbs, modifier = Modifier.weight(1f))
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SecondaryActionButton(
+                    onClick = { isEditing = !isEditing },
+                    contentDescription = "Изменить граммы",
+                    iconTint = SecondaryText,
+                ) {
                     Icon(
                         imageVector = Icons.Outlined.Edit,
                         contentDescription = "Изменить граммы",
-                        modifier = Modifier.size(22.dp),
-                        tint = Color.White.copy(alpha = 0.9f),
+                        modifier = Modifier.size(18.dp),
+                        tint = SecondaryText.copy(alpha = 0.72f),
                     )
                 }
-                RoundActionButton(onClick = onDelete, accent = Color(0xFFFF4D45)) {
+                SecondaryActionButton(
+                    onClick = onDelete,
+                    contentDescription = "Удалить запись",
+                    iconTint = DangerText,
+                ) {
                     Icon(
                         imageVector = Icons.Outlined.Delete,
                         contentDescription = "Удалить запись",
-                        modifier = Modifier.size(22.dp),
-                        tint = Color(0xFFFF4D45),
+                        modifier = Modifier.size(18.dp),
+                        tint = DangerText.copy(alpha = 0.68f),
                     )
                 }
             }
+
             if (isEditing) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -128,7 +158,7 @@ fun MealEntryCard(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedBorderColor = Color.White.copy(alpha = 0.14f),
-                            focusedBorderColor = Color(0xFFFF6C9A),
+                            focusedBorderColor = AccentColor,
                             unfocusedContainerColor = Color.White.copy(alpha = 0.04f),
                             focusedContainerColor = Color.White.copy(alpha = 0.05f),
                         ),
@@ -138,7 +168,7 @@ fun MealEntryCard(
                             onUpdateGrams(gramsText)
                             isEditing = false
                         },
-                    ) { Text("Сохранить", color = Color(0xFFFF6C9A)) }
+                    ) { Text("Сохранить", color = AccentColor) }
                 }
             }
         }
@@ -149,42 +179,81 @@ fun MealEntryCard(
 private fun FoodAvatar() {
     Box(
         modifier = Modifier
-            .size(68.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(Brush.radialGradient(listOf(Color(0xFFFF6C9A).copy(alpha = 0.26f), Color(0xFFFF6C9A).copy(alpha = 0.08f))))
-            .border(BorderStroke(1.dp, Color(0xFFFF6C9A).copy(alpha = 0.46f)), RoundedCornerShape(24.dp)),
+            .size(46.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Brush.radialGradient(listOf(AccentColor.copy(alpha = 0.18f), Color.White.copy(alpha = 0.045f))))
+            .border(BorderStroke(1.dp, AccentColor.copy(alpha = 0.22f)), RoundedCornerShape(16.dp)),
         contentAlignment = Alignment.Center,
     ) {
         Image(
             painter = painterResource(R.drawable.today_product_plate),
             contentDescription = "Иконка продукта",
-            modifier = Modifier.size(42.dp),
+            modifier = Modifier.size(30.dp),
         )
     }
 }
 
 @Composable
-private fun MacroChip(label: String, value: Double, color: Color) {
-    Text(
-        text = "$label ${value.grams()}",
-        style = MaterialTheme.typography.bodyLarge,
-        color = color,
-        fontWeight = FontWeight.SemiBold,
-    )
+private fun MacroPill(
+    label: String,
+    value: Double,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = 0.045f))
+            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.07f)), RoundedCornerShape(12.dp))
+            .padding(horizontal = 6.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "$label ${value.grams()}",
+            style = MaterialTheme.typography.labelLarge,
+            color = MacroText,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+        )
+    }
 }
 
 @Composable
-private fun RoundActionButton(
+private fun SecondaryActionButton(
     onClick: () -> Unit,
-    accent: Color,
+    contentDescription: String,
+    iconTint: Color,
     content: @Composable () -> Unit,
 ) {
-    IconButton(
-        onClick = onClick,
+    Box(
         modifier = Modifier
-            .size(54.dp)
+            .size(48.dp)
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.06f))
-            .border(BorderStroke(1.dp, accent.copy(alpha = 0.42f)), CircleShape),
-    ) { content() }
+            .clickable(onClickLabel = contentDescription, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(iconTint.copy(alpha = 0.055f))
+                .border(BorderStroke(1.dp, iconTint.copy(alpha = 0.12f)), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) { content() }
+    }
 }
+
+private val CardCornerRadius = 22.dp
+private val AccentColor = Color(0xFFFF8A5B)
+private val PrimaryText = Color(0xFFF4F6FA)
+private val SecondaryText = Color(0xFFB9BEC9)
+private val MacroText = Color(0xFFD5D9E1)
+private val DangerText = Color(0xFFFF7C72)
+private val CardStroke = Color.White.copy(alpha = 0.085f)
+private val CardBrush = Brush.linearGradient(
+    listOf(
+        Color(0xFF151922).copy(alpha = 0.98f),
+        Color(0xFF0C0F15).copy(alpha = 0.99f),
+    ),
+)

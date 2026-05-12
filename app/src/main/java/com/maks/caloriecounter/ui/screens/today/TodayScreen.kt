@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.painterResource
@@ -88,8 +89,8 @@ fun TodayScreen(
                 .fillMaxSize()
                 .background(TodayBackgroundBrush)
                 .padding(innerPadding),
-            contentPadding = PaddingValues(start = 16.dp, top = 24.dp, end = 16.dp, bottom = 128.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 22.dp, end = 16.dp, bottom = 128.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
                 TodayHeader(
@@ -105,8 +106,8 @@ fun TodayScreen(
                     text = "Сегодняшние приёмы пищи",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
-                    color = MutedText,
-                    modifier = Modifier.padding(top = 4.dp),
+                    color = PrimaryText,
+                    modifier = Modifier.padding(top = 2.dp),
                 )
             }
             if (state.entries.isEmpty()) {
@@ -216,14 +217,14 @@ private fun CalorieRing(summary: DailySummary, settings: UserSettings) {
             progress = { 1f },
             modifier = Modifier.size(148.dp),
             strokeWidth = 14.dp,
-            color = PinkSoft.copy(alpha = 0.15f),
+            color = TodayAccent.copy(alpha = 0.14f),
             trackColor = Color.Transparent,
         )
         CircularProgressIndicator(
             progress = { calorieProgress },
             modifier = Modifier.size(148.dp),
             strokeWidth = 14.dp,
-            color = TodayPink,
+            color = TodayAccent,
             trackColor = Color.Transparent,
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -246,9 +247,9 @@ private fun RemainingCalories(summary: DailySummary, settings: UserSettings, mod
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Осталось", style = MaterialTheme.typography.titleMedium, color = MutedText)
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(remaining.kcal(), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black, color = TodayPink)
+            Text(remaining.kcal(), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black, color = TodayAccent)
             Spacer(Modifier.width(6.dp))
-            Text("ккал", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = TodayPink)
+            Text("ккал", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = TodayAccent)
         }
         LinearProgressIndicator(
             progress = { progress(summary.calories, settings.calorieGoal.toDouble()) },
@@ -256,8 +257,8 @@ private fun RemainingCalories(summary: DailySummary, settings: UserSettings, mod
                 .fillMaxWidth()
                 .height(10.dp)
                 .clip(RoundedCornerShape(50)),
-            color = TodayPink,
-            trackColor = PinkSoft.copy(alpha = 0.14f),
+            color = TodayAccent,
+            trackColor = TodayAccent.copy(alpha = 0.13f),
         )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("0", color = MutedText, style = MaterialTheme.typography.bodyMedium)
@@ -282,7 +283,7 @@ private fun MacroGlassList(summary: DailySummary, settings: UserSettings) {
                 subtitle = "Цель: ${settings.proteinGoal} г",
                 value = summary.protein,
                 goal = settings.proteinGoal,
-                color = TodayPink,
+                color = MacroAccent,
                 iconRes = R.drawable.today_macro_protein,
             )
             MacroProgressRow(
@@ -290,7 +291,7 @@ private fun MacroGlassList(summary: DailySummary, settings: UserSettings) {
                 subtitle = "Цель: ${settings.fatGoal} г",
                 value = summary.fat,
                 goal = settings.fatGoal,
-                color = Amber,
+                color = MacroAccent,
                 iconRes = R.drawable.today_macro_fat,
             )
             MacroProgressRow(
@@ -298,7 +299,7 @@ private fun MacroGlassList(summary: DailySummary, settings: UserSettings) {
                 subtitle = "Цель: ${settings.carbsGoal} г",
                 value = summary.carbs,
                 goal = settings.carbsGoal,
-                color = PinkSoft,
+                color = MacroAccent,
                 iconRes = R.drawable.today_macro_carbs,
             )
         }
@@ -318,29 +319,39 @@ private fun MacroProgressRow(
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(54.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .background(color.copy(alpha = 0.14f))
-                .border(BorderStroke(1.dp, color.copy(alpha = 0.38f)), RoundedCornerShape(18.dp)),
+                .size(46.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(color.copy(alpha = 0.10f))
+                .border(BorderStroke(1.dp, color.copy(alpha = 0.20f)), RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Image(
                 painter = painterResource(iconRes),
                 contentDescription = title,
-                modifier = Modifier.size(34.dp),
+                modifier = Modifier.size(30.dp),
             )
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text(title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
-                    Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MutedText)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(title, style = MaterialTheme.typography.titleMedium, color = PrimaryText, fontWeight = FontWeight.SemiBold)
+                    Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MutedText, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                Text("${value.grams()} / $goal г", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                Text(
+                    "${value.grams()} / $goal г",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = PrimaryText,
+                    maxLines = 1,
+                    softWrap = false,
+                )
             }
             LinearProgressIndicator(
                 progress = { progress(value, goal.toDouble()) },
@@ -357,9 +368,9 @@ private fun MacroProgressRow(
                 .clip(RoundedCornerShape(16.dp))
                 .background(color.copy(alpha = 0.14f))
                 .border(BorderStroke(1.dp, color.copy(alpha = 0.22f)), RoundedCornerShape(16.dp))
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 9.dp, vertical = 7.dp),
         ) {
-            Text("$percent%", color = color, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text("$percent%", color = color, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
         }
     }
 }
@@ -371,7 +382,7 @@ private fun AddFoodButton(onClick: () -> Unit) {
             .fillMaxWidth()
             .height(64.dp)
             .clip(RoundedCornerShape(24.dp))
-            .background(Brush.horizontalGradient(listOf(Color(0xFFFF6C9A), Color(0xFFE92561))))
+            .background(Brush.horizontalGradient(listOf(TodayAccent, TodayAccentDark)))
             .clickable(onClick = onClick)
             .padding(horizontal = 22.dp),
         contentAlignment = Alignment.Center,
@@ -453,9 +464,10 @@ private val TodayBackgroundBrush = Brush.verticalGradient(
         Color(0xFF05070A),
     ),
 )
-private val TodayPink = Color(0xFFFF6C9A)
-private val PinkSoft = Color(0xFFFF8BB1)
-private val Amber = Color(0xFFFFA51F)
-private val MutedText = Color(0xFFA7A9B2)
+private val TodayAccent = Color(0xFFFF8A5B)
+private val TodayAccentDark = Color(0xFFE95F3E)
+private val MacroAccent = Color(0xFFD2D6DF)
+private val PrimaryText = Color(0xFFF4F6FA)
+private val MutedText = Color(0xFFB9BEC9)
 private val GlassDark = Color.White.copy(alpha = 0.055f)
 private val GlassStroke = Color.White.copy(alpha = 0.12f)
