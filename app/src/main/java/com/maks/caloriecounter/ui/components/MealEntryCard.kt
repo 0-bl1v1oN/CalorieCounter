@@ -246,7 +246,7 @@ private fun SecondaryActionButton(
 }
 
 private val CardCornerRadius = 22.dp
-pprivate val AccentColor = Color(0xFFFF6C9A)
+private val AccentColor = Color(0xFFFF6C9A)
 private val ProteinPink = Color(0xFFFF6C9A)
 private val FatAmber = Color(0xFFFFA51F)
 private val CarbsPink = Color(0xFFFF8BB1)

@@ -1,5 +1,10 @@
 package com.maks.caloriecounter.ui.screens.today
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,6 +30,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowRight
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,7 +46,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.painterResource
 import com.maks.caloriecounter.R
 import com.maks.caloriecounter.domain.model.DailySummary
+import com.maks.caloriecounter.domain.model.MealEntryDetails
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.UserSettings
 import com.maks.caloriecounter.domain.util.DateUtils
@@ -72,6 +83,7 @@ fun TodayScreen(
     val state by viewModel.uiState.collectAsState()
     val entriesByMeal = state.entries.groupBy { it.entry.mealType }
     val snackbarHostState = remember { SnackbarHostState() }
+    var collapsedMealNames by rememberSaveable { mutableStateOf(emptyList<String>()) }
 
     LaunchedEffect(snackbarMessage) {
         val message = snackbarMessage ?: return@LaunchedEffect
@@ -110,14 +122,23 @@ fun TodayScreen(
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
-            if (state.entries.isEmpty()) {
-                item { EmptyMealSection("Добавьте первый продукт за сегодня") }
-            } else {
-                MealType.todaySections.forEach { mealType ->
-                    val mealEntries = entriesByMeal[mealType].orEmpty()
-                    if (mealEntries.isNotEmpty()) {
-                        item { MealSectionTitle(title = mealType.title) }
-                        items(mealEntries, key = { it.entry.id }) { details ->
+            MealType.todaySections.forEach { mealType ->
+                val mealEntries = entriesByMeal[mealType].orEmpty()
+                val isExpanded = mealType.name !in collapsedMealNames
+                item(key = "meal-section-${mealType.name}") {
+                    CollapsibleMealSection(
+                        title = mealType.title,
+                        entries = mealEntries,
+                        isExpanded = isExpanded,
+                        onToggle = {
+                            collapsedMealNames = if (isExpanded) {
+                                collapsedMealNames + mealType.name
+                            } else {
+                                collapsedMealNames - mealType.name
+                            }
+                        },
+                    ) {
+                        mealEntries.forEach { details ->
                             MealEntryCard(
                                 entry = details,
                                 onDelete = { viewModel.deleteEntry(details.entry.id) },
@@ -421,16 +442,104 @@ private fun AddFoodButton(onClick: () -> Unit) {
     }
 }
 
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(7.dp),
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        SectionMacroText(label = "Б", value = totals.protein, modifier = Modifier.weight(1f))
+                        SectionMacroText(label = "Ж", value = totals.fat, modifier = Modifier.weight(1f))
+                        SectionMacroText(label = "У", value = totals.carbs, modifier = Modifier.weight(1f))
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "${totals.calories.kcal()} ккал",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TodayAccent,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Outlined.KeyboardArrowDown else Icons.AutoMirrored.Outlined.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = MutedText,
+                        modifier = Modifier.size(26.dp),
+                    )
+                }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically(),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (entries.isEmpty()) {
+                    EmptyMealSection()
+                } else {
+                    content()
+                }
+            }
+        }
+    }
+}
+
 @Composable
-private fun MealSectionTitle(title: String) {
+private fun SectionMacroText(
+    label: String,
+    value: Double,
+    modifier: Modifier = Modifier,
+) {
     Text(
-        text = title,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.SemiBold,
-        color = Color.White,
-        modifier = Modifier.padding(top = 2.dp),
+        text = "$label ${value.grams()}",
+        modifier = modifier,
+        style = MaterialTheme.typography.labelLarge,
+        color = MutedText,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis,
     )
 }
+
+private data class MealSectionTotals(
+    val calories: Double,
+    val protein: Double,
+    val fat: Double,
+    val carbs: Double,
+)
+
+private fun List<MealEntryDetails>.sectionTotals(): MealSectionTotals = MealSectionTotals(
+    calories = sumOf { it.calories },
+    protein = sumOf { it.protein },
+    fat = sumOf { it.fat },
+    carbs = sumOf { it.carbs },
+)
 
 @Composable
 private fun EmptyMealSection(text: String = "Нет продуктов") {
