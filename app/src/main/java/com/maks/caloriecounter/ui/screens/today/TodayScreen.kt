@@ -442,70 +442,105 @@ private fun AddFoodButton(onClick: () -> Unit) {
     }
 }
 
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+@Composable
+private fun CollapsibleMealSection(
+    title: String,
+    entries: List<MealEntryDetails>,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val totals = entries.sectionTotals()
+
+    GlassPanel(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(26.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            MealSectionHeader(
+                title = title,
+                totals = totals,
+                isExpanded = isExpanded,
+                onToggle = onToggle,
+            )
+
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically(),
             ) {
                 Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(7.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        SectionMacroText(label = "Б", value = totals.protein, modifier = Modifier.weight(1f))
-                        SectionMacroText(label = "Ж", value = totals.fat, modifier = Modifier.weight(1f))
-                        SectionMacroText(label = "У", value = totals.carbs, modifier = Modifier.weight(1f))
+                    if (entries.isEmpty()) {
+                        EmptyMealSection()
+                    } else {
+                        content()
                     }
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        text = "${totals.calories.kcal()} ккал",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TodayAccent,
-                        maxLines = 1,
-                        softWrap = false,
-                    )
-                    Icon(
-                        imageVector = if (isExpanded) Icons.Outlined.KeyboardArrowDown else Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = MutedText,
-                        modifier = Modifier.size(26.dp),
-                    )
                 }
             }
         }
+    }
+}    
 
-        AnimatedVisibility(
-            visible = isExpanded,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically(),
+@Composable
+private fun MealSectionHeader(
+    title: String,
+    totals: MealSectionTotals,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 6.dp, vertical = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                if (entries.isEmpty()) {
-                    EmptyMealSection()
-                } else {
-                    content()
-                }
-            }
+            Text(
+                text = title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "${totals.calories.kcal()} ккал",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = TodayAccent,
+                maxLines = 1,
+                softWrap = false,
+            )
+            Icon(
+                imageVector = if (isExpanded) Icons.Outlined.KeyboardArrowDown else Icons.Outlined.KeyboardArrowRight,
+                contentDescription = if (isExpanded) "Свернуть" else "Развернуть",
+                tint = MutedText,
+                modifier = Modifier.size(26.dp),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SectionMacroText(label = "Б", value = totals.protein, modifier = Modifier.weight(1f))
+            SectionMacroText(label = "Ж", value = totals.fat, modifier = Modifier.weight(1f))
+            SectionMacroText(label = "У", value = totals.carbs, modifier = Modifier.weight(1f))
         }
     }
 }
