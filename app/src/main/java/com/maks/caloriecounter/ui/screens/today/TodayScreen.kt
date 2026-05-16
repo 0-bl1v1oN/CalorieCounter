@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,7 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -53,8 +53,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -69,6 +73,7 @@ import com.maks.caloriecounter.domain.util.DateUtils
 import com.maks.caloriecounter.ui.components.MealEntryCard
 import com.maks.caloriecounter.ui.components.grams
 import com.maks.caloriecounter.ui.components.kcal
+import kotlin.math.max
 
 @Composable
 fun TodayScreen(
@@ -101,7 +106,7 @@ fun TodayScreen(
                 .fillMaxSize()
                 .background(TodayBackgroundBrush)
                 .padding(innerPadding),
-            contentPadding = PaddingValues(start = 16.dp, top = 22.dp, end = 16.dp, bottom = 128.dp),
+            contentPadding = PaddingValues(start = 16.dp, top = 20.dp, end = 16.dp, bottom = 132.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
@@ -112,6 +117,7 @@ fun TodayScreen(
                 )
             }
             item { DailyProgressCard(summary = state.summary, settings = state.settings) }
+            item { WeeklyCaloriesCard(points = state.weekCalories) }
             item { AddFoodButton(onClick = onAddMeal) }
             item {
                 Text(
@@ -119,7 +125,7 @@ fun TodayScreen(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                     color = PrimaryText,
-                    modifier = Modifier.padding(top = 2.dp),
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
             MealType.todaySections.forEach { mealType ->
@@ -197,7 +203,7 @@ private fun RoundDayButton(
     IconButton(
         onClick = onClick,
         modifier = Modifier
-            .size(58.dp)
+            .size(52.dp)
             .clip(CircleShape)
             .background(GlassDark)
             .border(BorderStroke(1.dp, GlassStroke), CircleShape),
@@ -214,7 +220,7 @@ private fun DailyProgressCard(
         shape = RoundedCornerShape(28.dp),
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Row(
@@ -233,18 +239,18 @@ private fun DailyProgressCard(
 @Composable
 private fun CalorieRing(summary: DailySummary, settings: UserSettings) {
     val calorieProgress = progress(summary.calories, settings.calorieGoal.toDouble())
-    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(152.dp)) {
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(140.dp)) {
         CircularProgressIndicator(
             progress = { 1f },
-            modifier = Modifier.size(152.dp),
-            strokeWidth = 13.dp,
+            modifier = Modifier.size(140.dp),
+            strokeWidth = 11.dp,
             color = TodayAccent.copy(alpha = 0.14f),
             trackColor = Color.Transparent,
         )
         CircularProgressIndicator(
             progress = { calorieProgress },
-            modifier = Modifier.size(152.dp),
-            strokeWidth = 13.dp,
+            modifier = Modifier.size(140.dp),
+            strokeWidth = 11.dp,
             color = TodayAccent,
             trackColor = Color.Transparent,
         )
@@ -257,7 +263,7 @@ private fun CalorieRing(summary: DailySummary, settings: UserSettings) {
             Text("ККАЛ", style = MaterialTheme.typography.labelMedium, color = MutedText)
             Text(
                 summary.calories.kcal(),
-                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 38.sp, lineHeight = 40.sp),
+                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 34.sp, lineHeight = 36.sp),
                 fontWeight = FontWeight.Black,
                 color = Color.White,
                 maxLines = 1,
@@ -272,10 +278,10 @@ private fun CalorieRing(summary: DailySummary, settings: UserSettings) {
 @Composable
 private fun RemainingCalories(summary: DailySummary, settings: UserSettings, modifier: Modifier = Modifier) {
     val remaining = (settings.calorieGoal - summary.calories).coerceAtLeast(0.0)
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Осталось", style = MaterialTheme.typography.titleMedium, color = MutedText)
         Row(verticalAlignment = Alignment.Bottom) {
-            Text(remaining.kcal(), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Black, color = TodayAccent)
+            Text(remaining.kcal(), style = MaterialTheme.typography.displaySmall.copy(fontSize = 36.sp), fontWeight = FontWeight.Black, color = TodayAccent)
             Spacer(Modifier.width(6.dp))
             Text("ккал", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = TodayAccent)
         }
@@ -311,7 +317,7 @@ private fun MacroGlassList(summary: DailySummary, settings: UserSettings) {
                 subtitle = "Цель: ${settings.proteinGoal} г",
                 value = summary.protein,
                 goal = settings.proteinGoal,
-                color = TodayPink,
+                color = ProteinLavender,
                 iconRes = R.drawable.today_macro_protein,
             )
             MacroProgressRow(
@@ -319,7 +325,7 @@ private fun MacroGlassList(summary: DailySummary, settings: UserSettings) {
                 subtitle = "Цель: ${settings.fatGoal} г",
                 value = summary.fat,
                 goal = settings.fatGoal,
-                color = Amber,
+                color = FatAmber,
                 iconRes = R.drawable.today_macro_fat,
             )
             MacroProgressRow(
@@ -327,7 +333,7 @@ private fun MacroGlassList(summary: DailySummary, settings: UserSettings) {
                 subtitle = "Цель: ${settings.carbsGoal} г",
                 value = summary.carbs,
                 goal = settings.carbsGoal,
-                color = PinkSoft,
+                color = CarbsRose,
                 iconRes = R.drawable.today_macro_carbs,
             )
         }
@@ -351,8 +357,8 @@ private fun MacroProgressRow(
     ) {
         Box(
             modifier = Modifier
-                .size(46.dp)
-                .clip(RoundedCornerShape(16.dp))
+                .size(42.dp)
+                .clip(RoundedCornerShape(15.dp))
                 .background(color.copy(alpha = 0.10f))
                 .border(BorderStroke(1.dp, color.copy(alpha = 0.20f)), RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center,
@@ -360,10 +366,10 @@ private fun MacroProgressRow(
             Image(
                 painter = painterResource(iconRes),
                 contentDescription = title,
-                modifier = Modifier.size(30.dp),
+                modifier = Modifier.size(27.dp),
             )
         }
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -383,7 +389,7 @@ private fun MacroProgressRow(
                 }
                 Text(
                     "${value.grams()} / $goal г",
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = PrimaryText,
                     maxLines = 1,
                     softWrap = false,
@@ -393,7 +399,7 @@ private fun MacroProgressRow(
                 progress = { progress(value, goal.toDouble()) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
+                    .height(7.dp)
                     .clip(RoundedCornerShape(50)),
                 color = color,
                 trackColor = Color.White.copy(alpha = 0.09f),
@@ -404,9 +410,122 @@ private fun MacroProgressRow(
                 .clip(RoundedCornerShape(16.dp))
                 .background(color.copy(alpha = 0.14f))
                 .border(BorderStroke(1.dp, color.copy(alpha = 0.22f)), RoundedCornerShape(16.dp))
-                .padding(horizontal = 9.dp, vertical = 7.dp),
+                .padding(horizontal = 8.dp, vertical = 6.dp),
         ) {
             Text("$percent%", color = color, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)
+        }
+    }
+}
+
+@Composable
+private fun WeeklyCaloriesCard(points: List<WeeklyCaloriesPoint>) {
+    GlassPanel(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = Brush.linearGradient(
+            listOf(
+                Color(0xFF171B24).copy(alpha = 0.94f),
+                Color(0xFF0E1118).copy(alpha = 0.98f),
+            ),
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = "Калории за неделю",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = PrimaryText,
+                )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(TodayAccent.copy(alpha = 0.10f))
+                        .border(BorderStroke(1.dp, TodayAccent.copy(alpha = 0.16f)), RoundedCornerShape(50))
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) {
+                    Text(
+                        text = "Последние 7 дней",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = TodayAccent,
+                        maxLines = 1,
+                    )
+                }
+            }
+            WeeklyLineChart(points = points)
+        }
+    }
+}
+
+@Composable
+private fun WeeklyLineChart(points: List<WeeklyCaloriesPoint>) {
+    val safePoints = if (points.isEmpty()) List(7) { WeeklyCaloriesPoint(DateUtils.shift(DateUtils.today(), it - 6), 0.0) } else points
+    val maxCalories = max(1.0, safePoints.maxOf { it.calories })
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(82.dp),
+        ) {
+            val horizontalStep = if (safePoints.size <= 1) size.width else size.width / (safePoints.lastIndex)
+            val topPadding = 8f
+            val bottomPadding = 10f
+            val chartHeight = size.height - topPadding - bottomPadding
+            val baseline = size.height - bottomPadding
+
+            for (index in 0..3) {
+                val y = topPadding + chartHeight * index / 3f
+                drawLine(
+                    color = Color.White.copy(alpha = 0.055f),
+                    start = Offset(0f, y),
+                    end = Offset(size.width, y),
+                    strokeWidth = 1.dp.toPx(),
+                )
+            }
+
+            val path = Path()
+            safePoints.forEachIndexed { index, point ->
+                val x = horizontalStep * index
+                val y = baseline - (point.calories / maxCalories).toFloat() * chartHeight
+                if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+            drawPath(
+                path = path,
+                color = TodayAccent,
+                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
+            )
+            safePoints.forEachIndexed { index, point ->
+                val x = horizontalStep * index
+                val y = baseline - (point.calories / maxCalories).toFloat() * chartHeight
+                drawCircle(
+                    color = TodayAccent.copy(alpha = if (point.calories > 0.0) 0.95f else 0.38f),
+                    radius = 3.2.dp.toPx(),
+                    center = Offset(x, y),
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            safePoints.forEach { point ->
+                Text(
+                    text = DateUtils.display(point.date).take(5),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MutedText,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
@@ -416,9 +535,10 @@ private fun AddFoodButton(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(64.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(Brush.horizontalGradient(listOf(TodayAccent, TodayAccentDark)))
+            .height(60.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(AddButtonGlow)
+            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.10f)), RoundedCornerShape(22.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 22.dp),
         contentAlignment = Alignment.Center,
@@ -435,7 +555,7 @@ private fun AddFoodButton(onClick: () -> Unit) {
                 Icon(Icons.Outlined.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
             }
             Spacer(Modifier.width(12.dp))
-            Text("Добавить еду", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+            Text("Добавить еду", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
             Spacer(Modifier.weight(1f))
             Icon(Icons.Outlined.ArrowForward, contentDescription = null, tint = Color.White.copy(alpha = 0.74f))
         }
@@ -459,8 +579,8 @@ private fun CollapsibleMealSection(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             MealSectionHeader(
                 title = title,
@@ -476,7 +596,7 @@ private fun CollapsibleMealSection(
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     if (entries.isEmpty()) {
                         EmptyMealSection()
@@ -487,7 +607,7 @@ private fun CollapsibleMealSection(
             }
         }
     }
-}    
+}
 
 @Composable
 private fun MealSectionHeader(
@@ -501,8 +621,8 @@ private fun MealSectionHeader(
             .fillMaxWidth()
             .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onToggle)
-            .padding(horizontal = 6.dp, vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = 5.dp, vertical = 3.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -538,9 +658,9 @@ private fun MealSectionHeader(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            SectionMacroText(label = "Б", value = totals.protein, modifier = Modifier.weight(1f))
-            SectionMacroText(label = "Ж", value = totals.fat, modifier = Modifier.weight(1f))
-            SectionMacroText(label = "У", value = totals.carbs, modifier = Modifier.weight(1f))
+            SectionMacroText(label = "Б", value = totals.protein, color = ProteinLavender, modifier = Modifier.weight(1f))
+            SectionMacroText(label = "Ж", value = totals.fat, color = FatAmber, modifier = Modifier.weight(1f))
+            SectionMacroText(label = "У", value = totals.carbs, color = CarbsRose, modifier = Modifier.weight(1f))
         }
     }
 }
@@ -549,13 +669,14 @@ private fun MealSectionHeader(
 private fun SectionMacroText(
     label: String,
     value: Double,
+    color: Color,
     modifier: Modifier = Modifier,
 ) {
     Text(
         text = "$label ${value.grams()}",
         modifier = modifier,
         style = MaterialTheme.typography.labelLarge,
-        color = MutedText,
+        color = Color,
         maxLines = 1,
         softWrap = false,
         overflow = TextOverflow.Ellipsis,
@@ -584,12 +705,13 @@ private fun EmptyMealSection(text: String = "Нет продуктов") {
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             color = MutedText,
             modifier = Modifier.padding(18.dp),
         )
     }
 }
+
 @Composable
 private fun GlassPanel(
     modifier: Modifier = Modifier,
@@ -606,7 +728,7 @@ private fun GlassPanel(
         shape = shape,
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.03f)),
         tonalElevation = 0.dp,
-        shadowElevation = 0.dp,
+        shadowElevation = 8.dp,
     ) { content() }
 }
 
@@ -623,12 +745,13 @@ private val TodayBackgroundBrush = Brush.verticalGradient(
         Color(0xFF05070A),
     ),
 )
-private val TodayAccent = Color(0xFFFF6C9A)
-private val TodayAccentDark = Color(0xFFE92561)
-private val TodayPink = Color(0xFFFF6C9A)
-private val PinkSoft = Color(0xFFFF8BB1)
-private val Amber = Color(0xFFFFA51F)
+private val TodayAccent = Color(0xFFFF6F9F)
+private val TodayAccentDark = Color(0xFF9E6BFF)
+private val ProteinLavender = Color(0xFF9FB2FF)
+private val FatAmber = Color(0xFFFFB020)
+private val CarbsRose = Color(0xFFFF5C9A)
 private val PrimaryText = Color(0xFFF4F6FA)
 private val MutedText = Color(0xFFA7A9B2)
 private val GlassDark = Color.White.copy(alpha = 0.055f)
 private val GlassStroke = Color.White.copy(alpha = 0.12f)
+private val AddButtonGlow = Brush.horizontalGradient(listOf(TodayAccent.copy(alpha = 0.94f), TodayAccentDark.copy(alpha = 0.88f)))
