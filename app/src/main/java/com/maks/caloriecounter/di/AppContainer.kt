@@ -72,7 +72,7 @@ class AppContainer(context: Context) {
     }
 
     fun addMealViewModelFactory(date: String): ViewModelProvider.Factory = viewModelFactory {
-        ddMealViewModel(date, productRepository, dishRepository, mealRepository, openFoodFactsRemoteDataSource)
+        AddMealViewModel(date, productRepository, dishRepository, mealRepository, openFoodFactsRemoteDataSource)
     }
 
     fun productsViewModelFactory(date: String): ViewModelProvider.Factory = viewModelFactory {

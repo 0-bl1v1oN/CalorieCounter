@@ -78,4 +78,5 @@ class MealRepository(private val mealEntryDao: MealEntryDao) {
                 carbsSnapshot = nutrition.carbs,
             ),
         )
+    }
 }

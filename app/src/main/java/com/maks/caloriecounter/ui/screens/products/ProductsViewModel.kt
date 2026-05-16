@@ -161,18 +161,19 @@ class ProductsViewModel(
             return
         }
         viewModelScope.launch {
-            if (state.editingProductId == null) {
+            val editingProductId = state.editingProductId
+            if (editingProductId == null) {
                 productRepository.upsertProductByName(product)
             } else {
-                val current = productRepository.getProduct(state.editingProductId)
+                val current = productRepository.getProduct(editingProductId)
                 val productWithSameName = productRepository.findProductByName(product.name)
-                if (productWithSameName != null && productWithSameName.id != state.editingProductId) {
+                if (productWithSameName != null && productWithSameName.id != editingProductId) {
                     screenState.update { it.copy(errorMessage = "Продукт с таким названием уже есть") }
                     return@launch
                 }
                 productRepository.updateProduct(
                     product.copy(
-                        id = state.editingProductId,
+                        id = editingProductId,
                         createdAt = current?.createdAt ?: product.createdAt,
                         isFavorite = current?.isFavorite ?: false,
                         lastUsedAt = current?.lastUsedAt,

@@ -1,5 +1,6 @@
 package com.maks.caloriecounter.ui.screens.products
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -251,8 +252,9 @@ private fun FavoritesBlock(favorites: List<Product>, viewModel: ProductsViewMode
 @Composable
 private fun FavoriteProductCard(product: Product, onClick: () -> Unit) {
     Card(
-        onClick = onClick,
-        modifier = Modifier.width(140.dp),
+        modifier = Modifier
+            .width(140.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
@@ -279,8 +281,9 @@ private fun FavoriteProductCard(product: Product, onClick: () -> Unit) {
 @Composable
 private fun DishManageCard(dish: Dish, onOpenActions: () -> Unit) {
     Card(
-        onClick = onOpenActions,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onOpenActions),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {

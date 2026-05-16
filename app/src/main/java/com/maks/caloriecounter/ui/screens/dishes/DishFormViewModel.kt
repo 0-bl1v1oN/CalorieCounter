@@ -23,9 +23,11 @@ class DishFormViewModel(
     val uiState: StateFlow<DishFormUiState> = _uiState
 
     init {
-        if (dishId != null) {
+        val editingDishId = dishId
+        if (editingDishId != null) {
             viewModelScope.launch {
-                val dish = dishRepository.getDish(dishId)
+                val editingDishId = dishId
+        if (editingDishId != null) {
                 if (dish == null) {
                     _uiState.update { it.copy(isLoading = false, error = "Блюдо не найдено") }
                 } else {
