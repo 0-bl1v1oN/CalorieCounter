@@ -2,12 +2,12 @@ package com.maks.caloriecounter.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,8 +46,8 @@ fun AppNavigation(appContainer: AppContainer) {
         bottomBar = {
             if (showBottomBar) {
                 NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    containerColor = Color(0xFF080B11),
+                    contentColor = Color(0xFFF4F6FA),
                 ) {
                     bottomNavItems.forEach { item ->
                         NavigationBarItem(
@@ -62,11 +62,11 @@ fun AppNavigation(appContainer: AppContainer) {
                             icon = { Icon(item.icon, contentDescription = item.label) },
                             label = { Text(item.label) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                indicatorColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
-                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                selectedIconColor = Color.White,
+                                selectedTextColor = Color(0xFFFF6F9F),
+                                indicatorColor = Color(0xFFFF6F9F).copy(alpha = 0.18f),
+                                unselectedIconColor = Color(0xFF8D92A0),
+                                unselectedTextColor = Color(0xFF8D92A0),
                             ),
                         )
                     }

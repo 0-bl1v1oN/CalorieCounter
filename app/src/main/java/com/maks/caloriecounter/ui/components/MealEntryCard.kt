@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -65,22 +67,22 @@ fun MealEntryCard(
         Column(
             modifier = Modifier
                 .background(CardBrush)
-                .padding(horizontal = 14.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.Top,
             ) {
                 FoodAvatar()
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(7.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
                     Text(
                         text = entry.product.name,
-                        style = MaterialTheme.typography.titleMedium.copy(
+                        style = MaterialTheme.typography.titleSmail.copy(
                             lineBreak = LineBreak.Heading,
                             hyphens = Hyphens.None,
                         ),
@@ -91,54 +93,48 @@ fun MealEntryCard(
                     )
                     Text(
                         text = "${entry.entry.grams.grams()} г • ${entry.calories.kcal()} ккал",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmail,
                         color = SecondaryText,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        MacroText(label = "Б", value = entry.protein, color = ProteinLavender)
+                        MacroText(label = "Ж", value = entry.fat, color = FatAmber)
+                        MacroText(label = "У", value = entry.carbs, color = CarbsRose)
+                    }
                 }
-                }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 58.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                MacroPill(label = "Б", value = entry.protein, color = ProteinPink, modifier = Modifier.weight(1f))
-                MacroPill(label = "Ж", value = entry.fat, color = FatAmber, modifier = Modifier.weight(1f))
-                MacroPill(label = "У", value = entry.carbs, color = CarbsPink, modifier = Modifier.weight(1f))
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                SecondaryActionButton(
-                    onClick = { isEditing = !isEditing },
-                    contentDescription = "Изменить граммы",
-                    iconTint = SecondaryText,
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Edit,
+                    SecondaryActionButton(
+                        onClick = { isEditing = !isEditing },
                         contentDescription = "Изменить граммы",
-                        modifier = Modifier.size(18.dp),
-                        tint = SecondaryText.copy(alpha = 0.72f),
-                    )
-                }
-                SecondaryActionButton(
-                    onClick = onDelete,
-                    contentDescription = "Удалить запись",
-                    iconTint = DangerText,
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
+                        iconTint = SecondaryText,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Edit,
+                            contentDescription = "Изменить граммы",
+                            modifier = Modifier.size(16.dp),
+                            tint = SecondaryText.copy(alpha = 0.70f),
+                        )
+                    }
+                    SecondaryActionButton(
+                        onClick = onDelete,
                         contentDescription = "Удалить запись",
-                        modifier = Modifier.size(18.dp),
-                        tint = DangerText.copy(alpha = 0.68f),
-                    )
+                        iconTint = DangerText,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = "Удалить запись",
+                            modifier = Modifier.size(16.dp),
+                            tint = DangerText.copy(alpha = 0.66f),
+                        )
+                    }
                 }
             }
 
@@ -154,7 +150,7 @@ fun MealEntryCard(
                         label = { Text("Граммы") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(14.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedBorderColor = Color.White.copy(alpha = 0.14f),
@@ -179,43 +175,41 @@ fun MealEntryCard(
 private fun FoodAvatar() {
     Box(
         modifier = Modifier
-            .size(46.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .size(40.dp)
+            .clip(RoundedCornerShape(14.dp))
             .background(Brush.radialGradient(listOf(AccentColor.copy(alpha = 0.18f), Color.White.copy(alpha = 0.045f))))
-            .border(BorderStroke(1.dp, AccentColor.copy(alpha = 0.22f)), RoundedCornerShape(16.dp)),
+            .border(BorderStroke(1.dp, AccentColor.copy(alpha = 0.22f)), RoundedCornerShape(14.dp)),
         contentAlignment = Alignment.Center,
     ) {
         Image(
             painter = painterResource(R.drawable.today_product_plate),
             contentDescription = "Иконка продукта",
-            modifier = Modifier.size(30.dp),
+            modifier = Modifier.size(26.dp),
         )
     }
 }
 
 @Composable
-private fun MacroPill(
+private fun MacroText(
     label: String,
     value: Double,
     color: Color,
-    modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(color.copy(alpha = 0.10f))
-            .border(BorderStroke(1.dp, color.copy(alpha = 0.18f)), RoundedCornerShape(12.dp))
-            .padding(horizontal = 6.dp, vertical = 6.dp),
-        contentAlignment = Alignment.Center,
-    ) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = "$label ${value.grams()}",
-            style = MaterialTheme.typography.labelLarge,
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
             color = color,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
+        Spacer(Modifier.width(2.dp))
+        Text(
+            text = value.grams(),
+            style = MaterialTheme.typography.labelMedium,
+            color = SecondaryText,
             maxLines = 1,
             softWrap = false,
-            overflow = TextOverflow.Clip,
         )
     }
 }
@@ -229,14 +223,14 @@ private fun SecondaryActionButton(
 ) {
     Box(
         modifier = Modifier
-            .size(48.dp)
+            .size(36.dp)
             .clip(CircleShape)
             .clickable(onClickLabel = contentDescription, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .size(34.dp)
+                .size(28.dp)
                 .clip(CircleShape)
                 .background(iconTint.copy(alpha = 0.055f))
                 .border(BorderStroke(1.dp, iconTint.copy(alpha = 0.12f)), CircleShape),
@@ -245,11 +239,11 @@ private fun SecondaryActionButton(
     }
 }
 
-private val CardCornerRadius = 22.dp
-private val AccentColor = Color(0xFFFF6C9A)
-private val ProteinPink = Color(0xFFFF6C9A)
-private val FatAmber = Color(0xFFFFA51F)
-private val CarbsPink = Color(0xFFFF8BB1)
+private val CardCornerRadius = 18.dp
+private val AccentColor = Color(0xFFFF6F9F)
+private val ProteinLavender = Color(0xFF9FB2FF)
+private val FatAmber = Color(0xFFFFB020)
+private val CarbsRose = Color(0xFFFF5C9A)
 private val PrimaryText = Color(0xFFF4F6FA)
 private val SecondaryText = Color(0xFFA7A9B2)
 private val DangerText = Color(0xFFFF7C72)
