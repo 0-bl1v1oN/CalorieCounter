@@ -67,22 +67,22 @@ fun MealEntryCard(
         Column(
             modifier = Modifier
                 .background(CardBrush)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
                 verticalAlignment = Alignment.Top,
             ) {
                 FoodAvatar()
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
                         text = entry.product.name,
-                        style = MaterialTheme.typography.titleSmail.copy(
+                        style = MaterialTheme.typography.titleSmall.copy(
                             lineBreak = LineBreak.Heading,
                             hyphens = Hyphens.None,
                         ),
@@ -93,13 +93,13 @@ fun MealEntryCard(
                     )
                     Text(
                         text = "${entry.entry.grams.grams()} г • ${entry.calories.kcal()} ккал",
-                        style = MaterialTheme.typography.bodySmail,
+                        style = MaterialTheme.typography.bodySmall,
                         color = SecondaryText,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         MacroText(label = "Б", value = entry.protein, color = ProteinLavender)
@@ -119,8 +119,8 @@ fun MealEntryCard(
                         Icon(
                             imageVector = Icons.Outlined.Edit,
                             contentDescription = "Изменить граммы",
-                            modifier = Modifier.size(16.dp),
-                            tint = SecondaryText.copy(alpha = 0.70f),
+                            modifier = Modifier.size(14.dp),
+                            tint = SecondaryText.copy(alpha = 0.54f),
                         )
                     }
                     SecondaryActionButton(
@@ -131,8 +131,8 @@ fun MealEntryCard(
                         Icon(
                             imageVector = Icons.Outlined.Delete,
                             contentDescription = "Удалить запись",
-                            modifier = Modifier.size(16.dp),
-                            tint = DangerText.copy(alpha = 0.66f),
+                            modifier = Modifier.size(14.dp),
+                            tint = DangerText.copy(alpha = 0.52f),
                         )
                     }
                 }
@@ -141,7 +141,7 @@ fun MealEntryCard(
             if (isEditing) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     OutlinedTextField(
@@ -175,16 +175,16 @@ fun MealEntryCard(
 private fun FoodAvatar() {
     Box(
         modifier = Modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .size(36.dp)
+            .clip(RoundedCornerShape(12.dp))
             .background(Brush.radialGradient(listOf(AccentColor.copy(alpha = 0.18f), Color.White.copy(alpha = 0.045f))))
-            .border(BorderStroke(1.dp, AccentColor.copy(alpha = 0.22f)), RoundedCornerShape(14.dp)),
+            .border(BorderStroke(1.dp, AccentColor.copy(alpha = 0.18f)), RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center,
     ) {
         Image(
             painter = painterResource(R.drawable.today_product_plate),
             contentDescription = "Иконка продукта",
-            modifier = Modifier.size(26.dp),
+            modifier = Modifier.size(23.dp),
         )
     }
 }
@@ -223,17 +223,17 @@ private fun SecondaryActionButton(
 ) {
     Box(
         modifier = Modifier
-            .size(36.dp)
+            .size(32.dp)
             .clip(CircleShape)
             .clickable(onClickLabel = contentDescription, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .size(28.dp)
+                .size(25.dp)
                 .clip(CircleShape)
-                .background(iconTint.copy(alpha = 0.055f))
-                .border(BorderStroke(1.dp, iconTint.copy(alpha = 0.12f)), CircleShape),
+                .background(iconTint.copy(alpha = 0.040f))
+                .border(BorderStroke(1.dp, iconTint.copy(alpha = 0.09f)), CircleShape),
             contentAlignment = Alignment.Center,
         ) { content() }
     }
@@ -246,7 +246,7 @@ private val FatAmber = Color(0xFFFFB020)
 private val CarbsRose = Color(0xFFFF5C9A)
 private val PrimaryText = Color(0xFFF4F6FA)
 private val SecondaryText = Color(0xFFA7A9B2)
-private val DangerText = Color(0xFFFF7C72)
+private val DangerText = Color(0xFFD36A66)
 private val CardStroke = Color.White.copy(alpha = 0.085f)
 private val CardBrush = Brush.linearGradient(
     listOf(

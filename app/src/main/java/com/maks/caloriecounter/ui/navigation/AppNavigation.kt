@@ -62,9 +62,9 @@ fun AppNavigation(appContainer: AppContainer) {
                             icon = { Icon(item.icon, contentDescription = item.label) },
                             label = { Text(item.label) },
                             colors = NavigationBarItemDefaults.colors(
-                                selectedIconColor = Color.White,
-                                selectedTextColor = Color(0xFFFF6F9F),
-                                indicatorColor = Color(0xFFFF6F9F).copy(alpha = 0.18f),
+                                selectedIconColor = Color(0xFFFF5C9A),
+                                selectedTextColor = Color(0xFFFF5C9A),
+                                indicatorColor = Color(0xFF7A243F).copy(alpha = 0.34f),
                                 unselectedIconColor = Color(0xFF8D92A0),
                                 unselectedTextColor = Color(0xFF8D92A0),
                             ),
