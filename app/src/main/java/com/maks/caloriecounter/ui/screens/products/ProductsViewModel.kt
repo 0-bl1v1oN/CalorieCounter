@@ -2,8 +2,10 @@ package com.maks.caloriecounter.ui.screens.products
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.maks.caloriecounter.data.repository.DishRepository
 import com.maks.caloriecounter.data.repository.MealRepository
 import com.maks.caloriecounter.data.repository.ProductRepository
+import com.maks.caloriecounter.domain.model.Dish
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.Product
 import com.maks.caloriecounter.ui.screens.addmeal.asDouble
@@ -20,12 +22,14 @@ import kotlinx.coroutines.launch
 class ProductsViewModel(
     private val date: String,
     private val productRepository: ProductRepository,
+    private val dishRepository: DishRepository,
     private val mealRepository: MealRepository,
 ) : ViewModel() {
     private val screenState = MutableStateFlow(ProductsUiState())
 
-    val uiState: StateFlow<ProductsUiState> = combine(productRepository.observeProducts(), screenState) { products, state ->
+    val uiState: StateFlow<ProductsUiState> = combine(productRepository.observeProducts(), dishRepository.observeDishes(), screenState) { products, dishes, state ->
         val sortedProducts = products.sortedAlphabetically()
+        val sortedDishes = dishes.sortedAlphabetically()
         val favoriteProducts = sortedProducts.filter { it.isFavorite }
         val recentProducts = sortedProducts.filter { it.lastUsedAt != null }.sortedByDescending { it.lastUsedAt }
         val source = when (state.selectedFilter) {
@@ -33,13 +37,21 @@ class ProductsViewModel(
             ProductFilter.Favorites -> favoriteProducts
             ProductFilter.Recent -> recentProducts
         }
+        val dishSource = when (state.selectedFilter) {
+            ProductFilter.All -> sortedDishes
+            ProductFilter.Favorites -> sortedDishes.filter { it.isFavorite }
+            ProductFilter.Recent -> sortedDishes.filter { it.lastUsedAt != null }.sortedByDescending { it.lastUsedAt }
+        }
         val filteredProducts = source.filterByQuery(state.searchQuery)
+        val filteredDishes = dishSource.filterDishesByQuery(state.searchQuery)
 
-    state.copy(
+        state.copy(
             products = sortedProducts,
             favoriteProducts = favoriteProducts.filterByQuery(state.searchQuery),
             recentProducts = recentProducts.filterByQuery(state.searchQuery),
             filteredProducts = filteredProducts,
+            dishes = sortedDishes,
+            filteredDishes = filteredDishes,
             isLoading = false,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProductsUiState())
@@ -50,15 +62,29 @@ class ProductsViewModel(
 
     fun openActions(product: Product) = screenState.update { it.copy(actionsProduct = product) }
 
-    fun closeActions() = screenState.update { it.copy(actionsProduct = null) }
+    fun closeActions() = screenState.update { it.copy(actionsProduct = null, actionsDish = null) }
+
+    fun openDishActions(dish: Dish) = screenState.update { it.copy(actionsDish = dish) }
 
     fun requestDeleteProduct(product: Product) = screenState.update { it.copy(actionsProduct = null, deleteConfirmationProduct = product) }
 
-    fun dismissDeleteConfirmation() = screenState.update { it.copy(deleteConfirmationProduct = null) }
+    fun dismissDeleteConfirmation() = screenState.update { it.copy(deleteConfirmationProduct = null, deleteConfirmationDish = null) }
 
     fun deleteProduct(product: Product) = viewModelScope.launch {
         productRepository.deleteProduct(product)
         screenState.update { it.copy(deleteConfirmationProduct = null, snackbarMessage = "Продукт удалён") }
+    }
+
+    fun requestDeleteDish(dish: Dish) = screenState.update { it.copy(actionsDish = null, deleteConfirmationDish = dish) }
+
+    fun deleteDish(dish: Dish) = viewModelScope.launch {
+        dishRepository.deleteDish(dish)
+        screenState.update { it.copy(deleteConfirmationDish = null, snackbarMessage = "Блюдо удалено") }
+    }
+
+    fun toggleDishFavorite(dish: Dish) = viewModelScope.launch {
+        dishRepository.toggleFavorite(dish)
+        screenState.update { it.copy(actionsDish = null) }
     }
 
     fun toggleFavorite(product: Product) = viewModelScope.launch {
@@ -199,10 +225,20 @@ class ProductsViewModel(
             RussianCollator.compare(first.name.normalizedForSort(), second.name.normalizedForSort())
         }
 
+        fun List<Dish>.sortedAlphabetically(): List<Dish> = sortedWith { first, second ->
+            RussianCollator.compare(first.name.normalizedForSort(), second.name.normalizedForSort())
+        }
+
         fun List<Product>.filterByQuery(query: String): List<Product> {
             val normalizedQuery = query.trim().normalizedForSort()
             if (normalizedQuery.isBlank()) return this
             return filter { product -> product.name.normalizedForSort().contains(normalizedQuery, ignoreCase = true) }
+        }
+
+        fun List<Dish>.filterDishesByQuery(query: String): List<Dish> {
+            val normalizedQuery = query.trim().normalizedForSort()
+            if (normalizedQuery.isBlank()) return this
+            return filter { dish -> dish.name.normalizedForSort().contains(normalizedQuery, ignoreCase = true) }
         }
 
         fun String.normalizedForSort(): String = lowercase(Locale("ru")).replace('ё', 'е')

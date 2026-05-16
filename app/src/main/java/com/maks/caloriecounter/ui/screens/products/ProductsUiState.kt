@@ -1,5 +1,6 @@
 package com.maks.caloriecounter.ui.screens.products
 
+import com.maks.caloriecounter.domain.model.Dish
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.Product
 
@@ -34,12 +35,16 @@ data class ProductsUiState(
     val favoriteProducts: List<Product> = emptyList(),
     val recentProducts: List<Product> = emptyList(),
     val filteredProducts: List<Product> = emptyList(),
+    val dishes: List<Dish> = emptyList(),
+    val filteredDishes: List<Dish> = emptyList(),
     val isLoading: Boolean = true,
     val errorMessage: String? = null,
     val snackbarMessage: String? = null,
     val quickAdd: QuickAddState = QuickAddState(),
     val actionsProduct: Product? = null,
     val deleteConfirmationProduct: Product? = null,
+    val actionsDish: Dish? = null,
+    val deleteConfirmationDish: Dish? = null,
     val form: ProductFormState = ProductFormState(),
     val editingProductId: Long? = null,
     val isFormSaved: Boolean = false,

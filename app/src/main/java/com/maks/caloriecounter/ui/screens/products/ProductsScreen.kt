@@ -51,11 +51,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.maks.caloriecounter.domain.model.Dish
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.Product
 import com.maks.caloriecounter.ui.components.AppTextField
 import com.maks.caloriecounter.ui.components.EmptyState
 import com.maks.caloriecounter.ui.components.ProductCard
+import com.maks.caloriecounter.ui.components.grams
 import com.maks.caloriecounter.ui.components.kcal
 import com.maks.caloriecounter.ui.components.nutritionLine
 
@@ -64,6 +66,8 @@ fun ProductsScreen(
     viewModel: ProductsViewModel,
     onAddProduct: () -> Unit,
     onEditProduct: (Long) -> Unit,
+    onAddDish: () -> Unit,
+    onEditDish: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -81,7 +85,7 @@ fun ProductsScreen(
             ExtendedFloatingActionButton(
                 onClick = onAddProduct,
                 icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-                text = { Text("Добавить") },
+                text = { Text("+ Продукт") },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             )
@@ -112,16 +116,31 @@ fun ProductsScreen(
                 )
             }
 
-            if (state.filteredProducts.isEmpty() && !state.isLoading) {
-                item { EmptyState("Продукты не найдены") }
+            if (state.filteredProducts.isEmpty() && state.filteredDishes.isEmpty() && !state.isLoading) {
+                item { EmptyState("Продукты и блюда не найдены") }
             } else {
-                items(state.filteredProducts, key = { it.id }) { product ->
-                    ProductCard(
-                        product = product,
-                        onOpenActions = { viewModel.openActions(product) },
-                        onToggleFavorite = { viewModel.toggleFavorite(product) },
-                        onQuickAdd = { viewModel.openQuickAdd(product) },
-                    )
+                if (state.filteredProducts.isNotEmpty()) {
+                    item { Text("Продукты", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold) }
+                    items(state.filteredProducts, key = { "product-${it.id}" }) { product ->
+                        ProductCard(
+                            product = product,
+                            onOpenActions = { viewModel.openActions(product) },
+                            onToggleFavorite = { viewModel.toggleFavorite(product) },
+                            onQuickAdd = { viewModel.openQuickAdd(product) },
+                        )
+                    }
+                }
+                if (state.filteredDishes.isNotEmpty()) {
+                    item { Text("Блюда", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold) }
+                    items(state.filteredDishes, key = { "dish-${it.id}" }) { dish ->
+                        DishManageCard(dish = dish, onOpenActions = { viewModel.openDishActions(dish) })
+                    }
+                }
+                item {
+                    OutlinedButton(onClick = onAddDish, modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(20.dp)) {
+                        Icon(Icons.Outlined.Add, contentDescription = null)
+                        Text("Создать блюдо", modifier = Modifier.padding(start = 8.dp))
+                    }
                 }
             }
         }
@@ -139,10 +158,27 @@ fun ProductsScreen(
         onToggleFavorite = { product -> viewModel.toggleFavorite(product) },
     )
 
+    DishActionsDialog(
+        dish = state.actionsDish,
+        onDismiss = viewModel::closeActions,
+        onEdit = { dish ->
+            viewModel.closeActions()
+            onEditDish(dish.id)
+        },
+        onDelete = { dish -> viewModel.requestDeleteDish(dish) },
+        onToggleFavorite = { dish -> viewModel.toggleDishFavorite(dish) },
+    )
+
     DeleteConfirmationDialog(
         product = state.deleteConfirmationProduct,
         onDismiss = viewModel::dismissDeleteConfirmation,
         onConfirm = { product -> viewModel.deleteProduct(product) },
+    )
+
+    DishDeleteConfirmationDialog(
+        dish = state.deleteConfirmationDish,
+        onDismiss = viewModel::dismissDeleteConfirmation,
+        onConfirm = { dish -> viewModel.deleteDish(dish) },
     )
 
     QuickAddDialog(state, viewModel)
@@ -241,6 +277,25 @@ private fun FavoriteProductCard(product: Product, onClick: () -> Unit) {
 }
 
 @Composable
+private fun DishManageCard(dish: Dish, onOpenActions: () -> Unit) {
+    Card(
+        onClick = onOpenActions,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(dish.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("Блюдо", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+            }
+            Text("${dish.totalWeight.grams()} г · ${dish.calories.kcal()} ккал", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Б ${dish.protein.grams()} · Ж ${dish.fat.grams()} · У ${dish.carbs.grams()}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
 private fun ProductActionsDialog(
     product: Product?,
     onDismiss: () -> Unit,
@@ -270,6 +325,30 @@ private fun ProductActionsDialog(
 }
 
 @Composable
+private fun DishActionsDialog(
+    dish: Dish?,
+    onDismiss: () -> Unit,
+    onEdit: (Dish) -> Unit,
+    onDelete: (Dish) -> Unit,
+    onToggleFavorite: (Dish) -> Unit,
+) {
+    if (dish == null) return
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(dish.name) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = { onEdit(dish) }, modifier = Modifier.fillMaxWidth()) { Text("Редактировать") }
+                TextButton(onClick = { onToggleFavorite(dish) }, modifier = Modifier.fillMaxWidth()) { Text(if (dish.isFavorite) "Убрать из избранного" else "Добавить в избранное") }
+                TextButton(onClick = { onDelete(dish) }, modifier = Modifier.fillMaxWidth()) { Text("Удалить") }
+            }
+        },
+        confirmButton = {},
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+    )
+}
+
+@Composable
 private fun DeleteConfirmationDialog(
     product: Product?,
     onDismiss: () -> Unit,
@@ -282,6 +361,22 @@ private fun DeleteConfirmationDialog(
         title = { Text("Удалить продукт?") },
         text = { Text(product.name) },
         confirmButton = { TextButton(onClick = { onConfirm(product) }) { Text("Удалить") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+    )
+}
+
+@Composable
+private fun DishDeleteConfirmationDialog(
+    dish: Dish?,
+    onDismiss: () -> Unit,
+    onConfirm: (Dish) -> Unit,
+) {
+    if (dish == null) return
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Удалить блюдо ‘${dish.name}’?") },
+        text = { Text("История питания не изменится, потому что записи хранят snapshot КБЖУ.") },
+        confirmButton = { TextButton(onClick = { onConfirm(dish) }) { Text("Удалить") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
     )
 }
