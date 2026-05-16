@@ -40,8 +40,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.Hyphens
-import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
@@ -81,11 +79,8 @@ fun MealEntryCard(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = entry.product.name,
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            lineBreak = LineBreak.Heading,
-                            hyphens = Hyphens.None,
-                        ),
+                        text = entry.name,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = PrimaryText,
                         maxLines = 2,

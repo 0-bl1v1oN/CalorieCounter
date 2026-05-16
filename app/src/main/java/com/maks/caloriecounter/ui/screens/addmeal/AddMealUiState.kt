@@ -1,13 +1,23 @@
 package com.maks.caloriecounter.ui.screens.addmeal
 
 import com.maks.caloriecounter.data.remote.openfoodfacts.OpenFoodFactsProduct
+import com.maks.caloriecounter.domain.model.Dish
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.Product
 
 enum class AddMealProductFilter(val title: String) {
-    All("Все"),
+    Products("Продукты"),
+    Dishes("Блюда"),
     Favorites("Избранные"),
     Recent("Недавние"),
+}
+
+data class AddMealListItem(
+    val product: Product? = null,
+    val dish: Dish? = null,
+    val showTypeBadge: Boolean = false,
+) {
+    val name: String = product?.name ?: dish?.name.orEmpty()
 }
 
 data class PendingScannedBarcode(
@@ -18,9 +28,10 @@ data class PendingScannedBarcode(
 
 data class AddMealUiState(
     val searchQuery: String = "",
-    val selectedFilter: AddMealProductFilter = AddMealProductFilter.All,
+    val selectedFilter: AddMealProductFilter = AddMealProductFilter.Products,
     val products: List<Product> = emptyList(),
-    val filteredProducts: List<Product> = emptyList(),
+    val dishes: List<Dish> = emptyList(),
+    val filteredItems: List<AddMealListItem> = emptyList(),
     val selectedProduct: Product? = null,
     val grams: String = "",
     val mealType: MealType = MealType.Breakfast,

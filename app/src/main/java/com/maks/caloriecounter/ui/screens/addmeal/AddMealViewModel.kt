@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.maks.caloriecounter.data.remote.openfoodfacts.OpenFoodFactsRemoteDataSource
 import com.maks.caloriecounter.data.remote.openfoodfacts.OpenFoodFactsRemoteResult
 import com.maks.caloriecounter.data.remote.openfoodfacts.toProduct
+import com.maks.caloriecounter.data.repository.DishRepository
 import com.maks.caloriecounter.data.repository.MealRepository
 import com.maks.caloriecounter.data.repository.ProductRepository
+import com.maks.caloriecounter.domain.model.Dish
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.Product
 import com.maks.caloriecounter.domain.util.BarcodeNormalizer
@@ -23,21 +25,35 @@ import kotlinx.coroutines.launch
 class AddMealViewModel(
     private val date: String,
     private val productRepository: ProductRepository,
+    private val dishRepository: DishRepository,
     private val mealRepository: MealRepository,
     private val openFoodFactsRemoteDataSource: OpenFoodFactsRemoteDataSource,
 ) : ViewModel() {
     private val screenState = MutableStateFlow(AddMealUiState())
 
-    val uiState: StateFlow<AddMealUiState> = combine(productRepository.observeProducts(), screenState) { products, state ->
+    val uiState: StateFlow<AddMealUiState> = combine(
+        productRepository.observeProducts(),
+        dishRepository.observeDishes(),
+        screenState,
+    ) { products, dishes, state ->
         val sortedProducts = products.sortedAlphabetically()
-        val source = when (state.selectedFilter) {
-            AddMealProductFilter.All -> sortedProducts
-            AddMealProductFilter.Favorites -> sortedProducts.filter { it.isFavorite }
-            AddMealProductFilter.Recent -> sortedProducts.filter { it.lastUsedAt != null }.sortedByDescending { it.lastUsedAt }
+        val sortedDishes = dishes.sortedAlphabetically()
+        val items = when (state.selectedFilter) {
+            AddMealProductFilter.Products -> sortedProducts.map { AddMealListItem(product = it) }
+            AddMealProductFilter.Dishes -> sortedDishes.map { AddMealListItem(dish = it) }
+            AddMealProductFilter.Favorites -> (
+                sortedProducts.filter { it.isFavorite }.map { AddMealListItem(product = it, showTypeBadge = true) } +
+                    sortedDishes.filter { it.isFavorite }.map { AddMealListItem(dish = it, showTypeBadge = true) }
+                ).sortedByName()
+            AddMealProductFilter.Recent -> (
+                sortedProducts.filter { it.lastUsedAt != null }.map { AddMealListItem(product = it, showTypeBadge = true) } +
+                    sortedDishes.filter { it.lastUsedAt != null }.map { AddMealListItem(dish = it, showTypeBadge = true) }
+                ).sortedByDescending { it.product?.lastUsedAt ?: it.dish?.lastUsedAt ?: 0L }
         }
         state.copy(
             products = sortedProducts,
-            filteredProducts = source.filterByQuery(state.searchQuery),
+            dishes = sortedDishes,
+            filteredItems = items.filterByQuery(state.searchQuery),
             isLoading = false,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AddMealUiState())
@@ -217,10 +233,18 @@ class AddMealViewModel(
             RussianCollator.compare(first.name.normalizedForSort(), second.name.normalizedForSort())
         }
 
-        fun List<Product>.filterByQuery(query: String): List<Product> {
+        fun List<Dish>.sortedAlphabetically(): List<Dish> = sortedWith { first, second ->
+            RussianCollator.compare(first.name.normalizedForSort(), second.name.normalizedForSort())
+        }
+
+        fun List<AddMealListItem>.sortedByName(): List<AddMealListItem> = sortedWith { first, second ->
+            RussianCollator.compare(first.name.normalizedForSort(), second.name.normalizedForSort())
+        }
+
+        fun List<AddMealListItem>.filterByQuery(query: String): List<AddMealListItem> {
             val normalizedQuery = query.trim().normalizedForSort()
             if (normalizedQuery.isBlank()) return this
-            return filter { product -> product.name.normalizedForSort().contains(normalizedQuery, ignoreCase = true) }
+            return filter { item -> item.name.normalizedForSort().contains(normalizedQuery, ignoreCase = true) }
         }
 
         fun String.normalizedForSort(): String = lowercase(Locale("ru")).replace('ё', 'е')

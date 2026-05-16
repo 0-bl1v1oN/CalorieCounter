@@ -26,6 +26,9 @@ import android.net.Uri
 import com.maks.caloriecounter.di.AppContainer
 import com.maks.caloriecounter.domain.util.DateUtils
 import com.maks.caloriecounter.ui.screens.addmeal.AddMealScreen
+import com.maks.caloriecounter.ui.screens.dishes.DishFormScreen
+import com.maks.caloriecounter.ui.screens.dishes.DishLogScreen
+import com.maks.caloriecounter.ui.screens.dishes.ProductPickerScreen
 import com.maks.caloriecounter.ui.screens.history.HistoryScreen
 import com.maks.caloriecounter.ui.screens.products.ProductFormScreen
 import com.maks.caloriecounter.ui.screens.products.ProductFormState
@@ -95,6 +98,8 @@ fun AppNavigation(appContainer: AppContainer) {
                         navController.popBackStack()
                     },
                     onCreateProduct = { barcode, format, product -> navController.navigate(if (product == null) Routes.productAdd(barcode, format) else Routes.productAdd(barcode, format, product)) },
+                    onCreateDish = { navController.navigate(Routes.DishAdd) },
+                    onSelectDish = { dishId -> navController.navigate(Routes.dishLog(dishId)) },
                 )
             }
             composable(Routes.Products) {
@@ -103,6 +108,65 @@ fun AppNavigation(appContainer: AppContainer) {
                     viewModel = vm,
                     onAddProduct = { navController.navigate(Routes.ProductAddBase) },
                     onEditProduct = { productId -> navController.navigate(Routes.productEdit(productId)) },
+                    onAddDish = { navController.navigate(Routes.DishAdd) },
+                    onEditDish = { dishId -> navController.navigate(Routes.dishEdit(dishId)) },
+                )
+            }
+
+            composable(Routes.DishAdd) {
+                val selectedIds by it.savedStateHandle.getStateFlow("selectedProductIds", "").collectAsState()
+                val vm: com.maks.caloriecounter.ui.screens.dishes.DishFormViewModel = viewModel(key = "dish-add", factory = appContainer.dishFormViewModelFactory())
+                DishFormScreen(
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() },
+                    onPickProducts = { navController.navigate(Routes.DishProductPicker) },
+                    onCreateProduct = { navController.navigate(Routes.ProductAddBase) },
+                    onSaved = { navController.popBackStack() },
+                    selectedProductIds = selectedIds,
+                    onSelectedProductIdsConsumed = { it.savedStateHandle["selectedProductIds"] = "" },
+                )
+            }
+            composable(
+                route = Routes.DishEdit,
+                arguments = listOf(navArgument("dishId") { type = NavType.LongType }),
+            ) { entry ->
+                val dishId = requireNotNull(entry.arguments?.getLong("dishId"))
+                val selectedIds by entry.savedStateHandle.getStateFlow("selectedProductIds", "").collectAsState()
+                val vm: com.maks.caloriecounter.ui.screens.dishes.DishFormViewModel = viewModel(key = "dish-edit-$dishId", factory = appContainer.dishFormViewModelFactory(dishId))
+                DishFormScreen(
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() },
+                    onPickProducts = { navController.navigate(Routes.DishProductPicker) },
+                    onCreateProduct = { navController.navigate(Routes.ProductAddBase) },
+                    onSaved = { navController.popBackStack() },
+                    selectedProductIds = selectedIds,
+                    onSelectedProductIdsConsumed = { entry.savedStateHandle["selectedProductIds"] = "" },
+                )
+            }
+            composable(Routes.DishProductPicker) {
+                val vm: com.maks.caloriecounter.ui.screens.dishes.ProductPickerViewModel = viewModel(factory = appContainer.productPickerViewModelFactory())
+                ProductPickerScreen(
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() },
+                    onAdd = { ids ->
+                        navController.previousBackStackEntry?.savedStateHandle?.set("selectedProductIds", ids.joinToString(","))
+                        navController.popBackStack()
+                    },
+                )
+            }
+            composable(
+                route = Routes.DishLog,
+                arguments = listOf(navArgument("dishId") { type = NavType.LongType }),
+            ) { entry ->
+                val dishId = requireNotNull(entry.arguments?.getLong("dishId"))
+                val vm: com.maks.caloriecounter.ui.screens.dishes.DishLogViewModel = viewModel(key = "dish-log-$selectedDate-$dishId", factory = appContainer.dishLogViewModelFactory(selectedDate, dishId))
+                DishLogScreen(
+                    viewModel = vm,
+                    onBack = { navController.popBackStack() },
+                    onSaved = {
+                        todaySnackbarMessage = "Блюдо добавлено в дневник"
+                        navController.popBackStack(Routes.Today, false)
+                    },
                 )
             }
             composable(

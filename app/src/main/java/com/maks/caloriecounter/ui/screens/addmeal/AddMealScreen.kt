@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.maks.caloriecounter.data.remote.openfoodfacts.OpenFoodFactsProduct
+import com.maks.caloriecounter.domain.model.Dish
 import com.maks.caloriecounter.domain.model.MealType
 import com.maks.caloriecounter.domain.model.Product
 import com.maks.caloriecounter.ui.components.AppTextField
@@ -69,6 +70,8 @@ fun AddMealScreen(
     viewModel: AddMealViewModel,
     onSaved: () -> Unit,
     onCreateProduct: (String?, String?, OpenFoodFactsProduct?) -> Unit,
+    onCreateDish: () -> Unit,
+    onSelectDish: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -98,6 +101,8 @@ fun AddMealScreen(
                 state = state,
                 viewModel = viewModel,
                 onCreateProduct = { onCreateProduct(null, null, null) },
+                onCreateDish = onCreateDish,
+                onSelectDish = onSelectDish,
                 onScanBarcode = {
                     scanner.startScan()
                         .addOnSuccessListener { barcode ->
@@ -151,6 +156,8 @@ private fun ProductPickerContent(
     state: AddMealUiState,
     viewModel: AddMealViewModel,
     onCreateProduct: () -> Unit,
+    onCreateDish: () -> Unit,
+    onSelectDish: (Long) -> Unit,
     onScanBarcode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -163,7 +170,7 @@ private fun ProductPickerContent(
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Добавить еду", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text(
-                    text = "Выберите продукт из базы. КБЖУ подтянутся автоматически.",
+                    text = "Выберите продукт или сохранённое блюдо. КБЖУ подтянутся автоматически.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -185,46 +192,56 @@ private fun ProductPickerContent(
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }
-                AddMealFilters(state, viewModel)
-                OutlinedButton(
-                    onClick = onCreateProduct,
-                    modifier = Modifier.height(44.dp),
-                    shape = RoundedCornerShape(20.dp),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        text = "Создать новый продукт",
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
+                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = onCreateProduct,
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(text = "Продукт", modifier = Modifier.padding(start = 6.dp))
+                    }
+                    OutlinedButton(
+                        onClick = onCreateDish,
+                        modifier = Modifier.weight(1f).height(44.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                    ) {
+                        Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(text = "Блюдо", modifier = Modifier.padding(start = 6.dp))
+                    }
                 }
+                AddMealFilters(state, viewModel)
             }
         }
 
         item {
             Text(
-                text = when (state.selectedFilter) {
-                    AddMealProductFilter.All -> "Все продукты"
-                    AddMealProductFilter.Favorites -> "Избранные"
-                    AddMealProductFilter.Recent -> "Недавние"
-                },
+                text = state.selectedFilter.title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
             )
         }
 
-        if (state.filteredProducts.isEmpty() && !state.isLoading) {
-            item { EmptyState("Продукты не найдены") }
+        if (state.filteredItems.isEmpty() && !state.isLoading) {
+            item { EmptyState("Продукты или блюда не найдены") }
         } else {
-            items(state.filteredProducts, key = { it.id }) { product ->
-                AddMealProductCard(
-                    product = product,
-                    onSelect = { viewModel.selectProduct(product) },
-                )
+            items(state.filteredItems, key = { "${it.product?.id ?: 0}-${it.dish?.id ?: 0}-${it.name}" }) { item ->
+                item.product?.let { product ->
+                    AddMealProductCard(
+                        product = product,
+                        showTypeBadge = item.showTypeBadge,
+                        onSelect = { viewModel.selectProduct(product) },
+                    )
+                }
+                item.dish?.let { dish ->
+                    AddMealDishCard(
+                        dish = dish,
+                        showTypeBadge = item.showTypeBadge,
+                        onSelect = { onSelectDish(dish.id) },
+                    )
+                }
             }
         }
     }
@@ -238,7 +255,7 @@ private fun ProductSearchField(value: String, onValueChange: (String) -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
-        placeholder = { Text("Поиск продукта") },
+        placeholder = { Text("Поиск продукта или блюда") },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Outlined.Search,
@@ -284,7 +301,7 @@ private fun AddMealFilters(state: AddMealUiState, viewModel: AddMealViewModel) {
 }
 
 @Composable
-private fun AddMealProductCard(product: Product, onSelect: () -> Unit) {
+private fun AddMealProductCard(product: Product, showTypeBadge: Boolean = false, onSelect: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -302,13 +319,17 @@ private fun AddMealProductCard(product: Product, onSelect: () -> Unit) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Text(
-                    text = product.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = product.name,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (showTypeBadge) TypeBadge("Продукт")
+                }
                 Text(
                     text = product.nutritionLine(),
                     style = MaterialTheme.typography.bodyMedium,
@@ -323,6 +344,65 @@ private fun AddMealProductCard(product: Product, onSelect: () -> Unit) {
         }
     }
 }
+
+@Composable
+private fun AddMealDishCard(dish: Dish, showTypeBadge: Boolean = true, onSelect: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.32f)),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = dish.name,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (showTypeBadge) TypeBadge("Блюдо")
+                }
+                Text("${dish.totalWeight.grams()} г · ${dish.calories.kcal()} ккал", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                MacroLine(protein = dish.protein, fat = dish.fat, carbs = dish.carbs)
+            }
+            FilledTonalButton(onClick = onSelect, shape = RoundedCornerShape(16.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)) { Text("Выбрать") }
+        }
+    }
+}
+
+@Composable
+private fun TypeBadge(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            .padding(start = 4.dp),
+    )
+}
+
+@Composable
+private fun MacroLine(protein: Double, fat: Double, carbs: Double) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Б ${protein.grams()}", color = ProteinColor, style = MaterialTheme.typography.bodySmall)
+        Text("Ж ${fat.grams()}", color = FatColor, style = MaterialTheme.typography.bodySmall)
+        Text("У ${carbs.grams()}", color = CarbsColor, style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+private val ProteinColor = androidx.compose.ui.graphics.Color(0xFF9FB2FF)
+private val FatColor = androidx.compose.ui.graphics.Color(0xFFFFB020)
+private val CarbsColor = androidx.compose.ui.graphics.Color(0xFFFF5C9A)
 
 @Composable
 private fun QuickAddContent(

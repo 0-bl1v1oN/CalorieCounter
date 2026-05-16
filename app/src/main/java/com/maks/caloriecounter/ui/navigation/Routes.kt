@@ -12,6 +12,10 @@ object Routes {
     const val History = "history"
     const val Settings = "settings"
     const val AddMeal = "addMeal"
+    const val DishAdd = "dishes/add"
+    const val DishEdit = "dishes/edit/{dishId}"
+    const val DishProductPicker = "dishes/pickProducts"
+    const val DishLog = "dishes/log/{dishId}"
 
     fun productAdd(scannedBarcode: String?, barcodeFormat: String?): String = productAdd(
         scannedBarcode = scannedBarcode,
@@ -65,6 +69,8 @@ object Routes {
     }
 
     fun productEdit(productId: Long): String = "products/edit/$productId"
+    fun dishEdit(dishId: Long): String = "dishes/edit/$dishId"
+    fun dishLog(dishId: Long): String = "dishes/log/$dishId"
 }
 
 private fun String?.encodedOrEmpty(): String = this?.takeIf { it.isNotBlank() }?.let(Uri::encode).orEmpty()

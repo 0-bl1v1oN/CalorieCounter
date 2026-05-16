@@ -683,7 +683,7 @@ private fun SectionMacroText(
     Text(
         text = "$label ${value.grams()}",
         modifier = modifier,
-        sstyle = MaterialTheme.typography.labelMedium,
+        style = MaterialTheme.typography.labelMedium,
         color = color,
         maxLines = 1,
         softWrap = false,
