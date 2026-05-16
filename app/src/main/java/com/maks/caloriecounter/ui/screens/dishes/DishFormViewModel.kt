@@ -26,8 +26,7 @@ class DishFormViewModel(
         val editingDishId = dishId
         if (editingDishId != null) {
             viewModelScope.launch {
-                val editingDishId = dishId
-        if (editingDishId != null) {
+                val dish = dishRepository.getDish(editingDishId)
                 if (dish == null) {
                     _uiState.update { it.copy(isLoading = false, error = "Блюдо не найдено") }
                 } else {

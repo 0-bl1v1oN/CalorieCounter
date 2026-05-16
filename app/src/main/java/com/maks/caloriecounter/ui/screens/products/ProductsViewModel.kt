@@ -28,8 +28,8 @@ class ProductsViewModel(
     private val screenState = MutableStateFlow(ProductsUiState())
 
     val uiState: StateFlow<ProductsUiState> = combine(productRepository.observeProducts(), dishRepository.observeDishes(), screenState) { products, dishes, state ->
-        val sortedProducts = products.sortedAlphabetically()
-        val sortedDishes = dishes.sortedAlphabetically()
+        val sortedProducts = products.sortedProductsAlphabetically()
+        val sortedDishes = dishes.sortedDishesAlphabetically()
         val favoriteProducts = sortedProducts.filter { it.isFavorite }
         val recentProducts = sortedProducts.filter { it.lastUsedAt != null }.sortedByDescending { it.lastUsedAt }
         val source = when (state.selectedFilter) {
@@ -222,11 +222,11 @@ class ProductsViewModel(
     private companion object {
         val RussianCollator: Collator = Collator.getInstance(Locale("ru")).apply { strength = Collator.PRIMARY }
 
-        fun List<Product>.sortedAlphabetically(): List<Product> = sortedWith { first, second ->
+        fun List<Product>.sortedProductsAlphabetically(): List<Product> = sortedWith { first, second ->
             RussianCollator.compare(first.name.normalizedForSort(), second.name.normalizedForSort())
         }
 
-        fun List<Dish>.sortedAlphabetically(): List<Dish> = sortedWith { first, second ->
+        fun List<Dish>.sortedDishesAlphabetically(): List<Dish> = sortedWith { first, second ->
             RussianCollator.compare(first.name.normalizedForSort(), second.name.normalizedForSort())
         }
 
