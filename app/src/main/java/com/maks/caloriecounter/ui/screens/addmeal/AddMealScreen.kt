@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
@@ -50,6 +52,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
@@ -199,12 +202,17 @@ private fun ProductPickerContent(
                         modifier = Modifier.padding(start = 8.dp),
                     )
                 }
-                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
                         onClick = onCreateProduct,
                         modifier = Modifier.weight(1f).height(44.dp),
                         shape = RoundedCornerShape(20.dp),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)),
                     ) {
                         Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(text = "Продукт", modifier = Modifier.padding(start = 6.dp))
@@ -289,30 +297,43 @@ private fun ProductSearchField(value: String, onValueChange: (String) -> Unit) {
 
 @Composable
 private fun AddMealFilters(state: AddMealUiState, viewModel: AddMealViewModel) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(end = 28.dp),
-    ) {
-        items(AddMealProductFilter.entries) { filter ->
-            FilterChip(
-                selected = state.selectedFilter == filter,
-                onClick = { viewModel.selectFilter(filter) },
-                label = { Text(filter.title, style = MaterialTheme.typography.labelLarge) },
-                shape = RoundedCornerShape(16.dp),
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
+    Box(modifier = Modifier.fillMaxWidth()) {
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(end = 38.dp),
+        ) {
+            items(AddMealProductFilter.entries) { filter ->
+                FilterChip(
                     selected = state.selectedFilter == filter,
-                    borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f),
-                    selectedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                ),
-            )
+                    onClick = { viewModel.selectFilter(filter) },
+                    label = { Text(filter.title, style = MaterialTheme.typography.labelLarge) },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = CtaColor.copy(alpha = 0.28f),
+                        selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f),
+                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = state.selectedFilter == filter,
+                        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f),
+                        selectedBorderColor = CtaColor.copy(alpha = 0.44f),
+                    ),
+                )
+            }
         }
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .width(34.dp)
+                .height(40.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background),
+                    ),
+                ),
+        )
     }
 }
 
@@ -323,12 +344,7 @@ private fun AddMealProductCard(
     onSelect: () -> Unit,
     onToggleFavorite: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.32f)),
-    ) {
+    PremiumCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -376,12 +392,7 @@ private fun AddMealDishCard(
     onSelect: () -> Unit,
     onToggleFavorite: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.32f)),
-    ) {
+    PremiumCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -449,7 +460,12 @@ private fun MacroLine(protein: Double, fat: Double, carbs: Double) {
 private fun FavoriteIconButton(isFavorite: Boolean, onClick: () -> Unit) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier.size(38.dp),
+        modifier = Modifier
+            .size(40.dp)
+            .background(
+                color = if (isFavorite) FavoriteColor.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.78f),
+                shape = CircleShape,
+            ),
         colors = IconButtonDefaults.iconButtonColors(
             contentColor = if (isFavorite) FavoriteColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
         ),
@@ -459,6 +475,34 @@ private fun FavoriteIconButton(isFavorite: Boolean, onClick: () -> Unit) {
             contentDescription = if (isFavorite) "Убрать из избранного" else "Добавить в избранное",
             modifier = Modifier.size(22.dp),
         )
+    }
+}
+
+@Composable
+private fun PremiumCard(
+    modifier: Modifier = Modifier,
+    shape: RoundedCornerShape = RoundedCornerShape(20.dp),
+    content: @Composable () -> Unit,
+) {
+    Card(
+        modifier = modifier,
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+    ) {
+        Box(
+            modifier = Modifier.background(
+                Brush.linearGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.98f),
+                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
+                    ),
+                ),
+            ),
+        ) {
+            content()
+        }
     }
 }
 
@@ -496,12 +540,7 @@ private fun QuickAddContent(
             }
         }
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.32f)),
-            ) {
+            PremiumCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(18.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -528,11 +567,7 @@ private fun QuickAddContent(
             }
         }
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-            ) {
+            PremiumCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(18.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp),
