@@ -1,7 +1,9 @@
 package com.maks.caloriecounter.ui.screens.addmeal
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,10 +17,13 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.QrCodeScanner
+import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -29,6 +34,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -44,6 +50,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -202,11 +209,15 @@ private fun ProductPickerContent(
                         Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(text = "Продукт", modifier = Modifier.padding(start = 6.dp))
                     }
-                    OutlinedButton(
+                    Button(
                         onClick = onCreateDish,
                         modifier = Modifier.weight(1f).height(44.dp),
                         shape = RoundedCornerShape(20.dp),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CtaColor,
+                            contentColor = Color.White,
+                        ),                    
                     ) {
                         Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(text = "Блюдо", modifier = Modifier.padding(start = 6.dp))
@@ -233,6 +244,7 @@ private fun ProductPickerContent(
                         product = product,
                         showTypeBadge = item.showTypeBadge,
                         onSelect = { viewModel.selectProduct(product) },
+                        onToggleFavorite = { viewModel.toggleProductFavorite(product) },
                     )
                 }
                 item.dish?.let { dish ->
@@ -240,6 +252,7 @@ private fun ProductPickerContent(
                         dish = dish,
                         showTypeBadge = item.showTypeBadge,
                         onSelect = { onSelectDish(dish.id) },
+                        onToggleFavorite = { viewModel.toggleDishFavorite(dish) },
                     )
                 }
             }
@@ -276,7 +289,10 @@ private fun ProductSearchField(value: String, onValueChange: (String) -> Unit) {
 
 @Composable
 private fun AddMealFilters(state: AddMealUiState, viewModel: AddMealViewModel) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(end = 28.dp),
+    ) {
         items(AddMealProductFilter.entries) { filter ->
             FilterChip(
                 selected = state.selectedFilter == filter,
@@ -301,7 +317,12 @@ private fun AddMealFilters(state: AddMealUiState, viewModel: AddMealViewModel) {
 }
 
 @Composable
-private fun AddMealProductCard(product: Product, showTypeBadge: Boolean = false, onSelect: () -> Unit) {
+private fun AddMealProductCard(
+    product: Product,
+    showTypeBadge: Boolean = false,
+    onSelect: () -> Unit,
+    onToggleFavorite: () -> Unit,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -336,17 +357,25 @@ private fun AddMealProductCard(product: Product, showTypeBadge: Boolean = false,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            FilledTonalButton(
-                onClick = onSelect,
-                shape = RoundedCornerShape(16.dp),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-            ) { Text("Выбрать") }
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                FilledTonalButton(
+                    onClick = onSelect,
+                    shape = RoundedCornerShape(16.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                ) { Text("Выбрать") }
+                FavoriteIconButton(isFavorite = product.isFavorite, onClick = onToggleFavorite)
+            }
         }
     }
 }
 
 @Composable
-private fun AddMealDishCard(dish: Dish, showTypeBadge: Boolean = true, onSelect: () -> Unit) {
+private fun AddMealDishCard(
+    dish: Dish,
+    showTypeBadge: Boolean = true,
+    onSelect: () -> Unit,
+    onToggleFavorite: () -> Unit,
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
@@ -360,6 +389,19 @@ private fun AddMealDishCard(dish: Dish, showTypeBadge: Boolean = true, onSelect:
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .background(CtaColor.copy(alpha = 0.16f), RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Restaurant,
+                    contentDescription = null,
+                    modifier = Modifier.size(22.dp),
+                    tint = CtaColor,
+                )
+            }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -375,7 +417,10 @@ private fun AddMealDishCard(dish: Dish, showTypeBadge: Boolean = true, onSelect:
                 Text("${dish.totalWeight.grams()} г · ${dish.calories.kcal()} ккал", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 MacroLine(protein = dish.protein, fat = dish.fat, carbs = dish.carbs)
             }
-            FilledTonalButton(onClick = onSelect, shape = RoundedCornerShape(16.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)) { Text("Выбрать") }
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                FilledTonalButton(onClick = onSelect, shape = RoundedCornerShape(16.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)) { Text("Выбрать") }
+                FavoriteIconButton(isFavorite = dish.isFavorite, onClick = onToggleFavorite)
+            }
         }
     }
 }
@@ -400,9 +445,28 @@ private fun MacroLine(protein: Double, fat: Double, carbs: Double) {
     }
 }
 
-private val ProteinColor = androidx.compose.ui.graphics.Color(0xFF9FB2FF)
-private val FatColor = androidx.compose.ui.graphics.Color(0xFFFFB020)
-private val CarbsColor = androidx.compose.ui.graphics.Color(0xFFFF5C9A)
+@Composable
+private fun FavoriteIconButton(isFavorite: Boolean, onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(38.dp),
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = if (isFavorite) FavoriteColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
+        ),
+    ) {
+        Icon(
+            imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+            contentDescription = if (isFavorite) "Убрать из избранного" else "Добавить в избранное",
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+private val CtaColor = Color(0xFFC83A7A)
+private val FavoriteColor = Color(0xFFD7B56D)
+private val ProteinColor = Color(0xFF9FB2FF)
+private val FatColor = Color(0xFFFFB020)
+private val CarbsColor = Color(0xFFFF5C9A)
 
 @Composable
 private fun QuickAddContent(
@@ -493,7 +557,10 @@ private fun QuickAddContent(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = CtaColor,
+                    contentColor = Color.White,
+                ),
             ) { Text("Добавить") }
         }
     }

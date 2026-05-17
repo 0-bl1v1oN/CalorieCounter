@@ -1,10 +1,13 @@
 package com.maks.caloriecounter.ui.screens.dishes
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,10 +17,13 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -28,6 +34,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -121,7 +128,10 @@ fun DishFormScreen(
                     onClick = viewModel::save,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CtaColor,
+                        contentColor = Color.White,
+                    ),
                 ) { Text("Сохранить блюдо") }
             }
         }
@@ -176,7 +186,15 @@ fun ProductPickerScreen(viewModel: ProductPickerViewModel, onBack: () -> Unit, o
         bottomBar = {
             Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("Выбрано: ${state.selectedIds.size}", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                Button(onClick = { onAdd(state.selectedIds.toList()) }, enabled = state.selectedIds.isNotEmpty(), shape = RoundedCornerShape(18.dp)) { Text("Добавить") }
+                Button(
+                    onClick = { onAdd(state.selectedIds.toList()) },
+                    enabled = state.selectedIds.isNotEmpty(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CtaColor,
+                        contentColor = Color.White,
+                    ),
+                ) { Text("Добавить") }
             }
         },
     ) { innerPadding ->
@@ -210,7 +228,7 @@ fun DishLogScreen(viewModel: DishLogViewModel, onBack: () -> Unit, onSaved: () -
             val grams = state.grams.replace(',', '.').toDoubleOrNull() ?: 0.0
             val n = NutritionCalculator.forDishPortion(dish, grams)
             LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                item { DishInfoCard(dish) }
+                item { DishInfoCard(dish = dish, onToggleFavorite = viewModel::toggleFavorite) }
                 item { AppTextField(state.grams, viewModel::updateGrams, "Граммы", number = true) }
                 item {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -224,22 +242,47 @@ fun DishLogScreen(viewModel: DishLogViewModel, onBack: () -> Unit, onSaved: () -
                 }
                 item { DishTotalsCard(totalWeight = grams, calories = n.calories, protein = n.protein, fat = n.fat, carbs = n.carbs) }
                 state.error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
-                item { Button(onClick = viewModel::save, modifier = Modifier.fillMaxWidth().height(56.dp), shape = RoundedCornerShape(20.dp)) { Text("Добавить") } }
+                item {
+                    Button(
+                        onClick = viewModel::save,
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = CtaColor,
+                            contentColor = Color.White,
+                        ),
+                    ) { Text("Добавить") }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun DishInfoCard(dish: Dish) {
+private fun DishInfoCard(dish: Dish, onToggleFavorite: () -> Unit) {
     Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)) {
-        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(dish.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                Text("Блюдо", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(18.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .background(CtaColor.copy(alpha = 0.16f), RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Outlined.Restaurant, contentDescription = null, modifier = Modifier.size(22.dp), tint = CtaColor)
             }
-            Text("${dish.totalWeight.grams()} г · ${dish.calories.kcal()} ккал", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            MacroLine(dish.protein, dish.fat, dish.carbs)
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(dish.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text("Блюдо", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+                }
+                Text("${dish.totalWeight.grams()} г · ${dish.calories.kcal()} ккал", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                MacroLine(dish.protein, dish.fat, dish.carbs)
+            }
+            FavoriteIconButton(isFavorite = dish.isFavorite, onClick = onToggleFavorite)
         }
     }
 }
@@ -281,6 +324,26 @@ private fun MacroLine(protein: Double, fat: Double, carbs: Double) {
         Text("У ${carbs.grams()}", color = CarbsColor, style = MaterialTheme.typography.bodyMedium)
     }
 }
+
+@Composable
+private fun FavoriteIconButton(isFavorite: Boolean, onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(38.dp),
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = if (isFavorite) FavoriteColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
+        ),
+    ) {
+        Icon(
+            imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+            contentDescription = if (isFavorite) "Убрать из избранного" else "Добавить в избранное",
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+private val CtaColor = Color(0xFFC83A7A)
+private val FavoriteColor = Color(0xFFD7B56D)
 
 private val ProteinColor = Color(0xFF9FB2FF)
 private val FatColor = Color(0xFFFFB020)

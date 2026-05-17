@@ -30,6 +30,14 @@ class DishLogViewModel(
     fun updateGrams(value: String) = _uiState.update { it.copy(grams = value, error = null) }
     fun updateMealType(value: MealType) = _uiState.update { it.copy(mealType = value) }
 
+    fun toggleFavorite() {
+        val dish = _uiState.value.dish ?: return
+        viewModelScope.launch {
+            dishRepository.toggleFavorite(dish)
+            _uiState.update { it.copy(dish = dish.copy(isFavorite = !dish.isFavorite)) }
+        }
+    }
+    
     fun save() {
         val state = _uiState.value
         val dish = state.dish ?: return

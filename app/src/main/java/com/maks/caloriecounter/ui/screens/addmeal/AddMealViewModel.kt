@@ -66,6 +66,14 @@ class AddMealViewModel(
         it.copy(selectedProduct = product, grams = it.grams.ifBlank { "100" }, error = null)
     }
 
+    fun toggleProductFavorite(product: Product) {
+        viewModelScope.launch { productRepository.toggleFavorite(product) }
+    }
+
+    fun toggleDishFavorite(dish: Dish) {
+        viewModelScope.launch { dishRepository.toggleFavorite(dish) }
+    }
+
     fun clearSelectedProduct() = screenState.update { it.copy(selectedProduct = null, error = null) }
 
     fun updateGrams(value: String) = screenState.update { it.copy(grams = value, error = null) }
