@@ -38,6 +38,7 @@ import com.maks.caloriecounter.domain.model.Product
 fun ProductCard(
     product: Product,
     onOpenActions: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onQuickAdd: () -> Unit,
     modifier: Modifier = Modifier,
 ) {

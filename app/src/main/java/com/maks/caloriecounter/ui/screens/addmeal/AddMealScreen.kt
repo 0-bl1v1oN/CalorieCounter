@@ -16,14 +16,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,6 +40,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -466,6 +470,43 @@ private fun AddMealDishCard(
 }
 
 @Composable
+private fun FavoriteIconButton(
+    isFavorite: Boolean,
+    onClick: () -> Unit,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier =
+            Modifier
+                .size(40.dp)
+                .background(
+                    color =
+                        if (isFavorite) {
+                            FavoriteColor.copy(alpha = 0.16f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.78f)
+                        },
+                    shape = CircleShape,
+                ),
+        colors =
+            IconButtonDefaults.iconButtonColors(
+                contentColor =
+                    if (isFavorite) {
+                        FavoriteColor
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
+                    },
+            ),
+    ) {
+        Icon(
+            imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+            contentDescription = if (isFavorite) "Убрать из избранного" else "Добавить в избранное",
+            modifier = Modifier.size(22.dp),
+        )
+    }
+}
+
+@Composable
 private fun TypeBadge(text: String) {
     Text(
         text = text,
@@ -543,7 +584,6 @@ private fun PremiumCard(
 }
 
 private val CtaColor = Color(0xFFC83A7A)
-private val FavoriteColor = Color(0xFFD7B56D)
 private val ProteinColor = Color(0xFF9FB2FF)
 private val FatColor = Color(0xFFFFB020)
 private val CarbsColor = Color(0xFFFF5C9A)
