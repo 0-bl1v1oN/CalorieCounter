@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,16 +17,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -36,7 +34,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -52,13 +49,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.google.android.gms.common.ConnectionResult
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.common.api.CommonStatusCodes
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.maks.caloriecounter.data.remote.openfoodfacts.OpenFoodFactsProduct
 import com.maks.caloriecounter.domain.model.Dish
 import com.maks.caloriecounter.domain.model.MealType
@@ -68,12 +72,6 @@ import com.maks.caloriecounter.ui.components.EmptyState
 import com.maks.caloriecounter.ui.components.grams
 import com.maks.caloriecounter.ui.components.kcal
 import com.maks.caloriecounter.ui.components.nutritionLine
-import com.google.android.gms.common.ConnectionResult
-import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.common.api.CommonStatusCodes
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 
 @Composable
 fun AddMealScreen(
@@ -87,12 +85,15 @@ fun AddMealScreen(
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
-    val scanner = remember(context) {
-        val options = GmsBarcodeScannerOptions.Builder()
-            .enableAutoZoom()
-            .build()
-        GmsBarcodeScanning.getClient(context, options)
-    }
+    val scanner =
+        remember(context) {
+            val options =
+                GmsBarcodeScannerOptions
+                    .Builder()
+                    .enableAutoZoom()
+                    .build()
+            GmsBarcodeScanning.getClient(context, options)
+        }
     LaunchedEffect(state.saved) { if (state.saved) onSaved() }
     LaunchedEffect(state.snackbarMessage) {
         val message = state.snackbarMessage ?: return@LaunchedEffect
@@ -103,9 +104,10 @@ fun AddMealScreen(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
-        val contentModifier = Modifier
-            .fillMaxSize()
-            .padding(innerPadding)
+        val contentModifier =
+            Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
         if (state.selectedProduct == null) {
             ProductPickerContent(
                 state = state,
@@ -114,7 +116,8 @@ fun AddMealScreen(
                 onCreateDish = onCreateDish,
                 onSelectDish = onSelectDish,
                 onScanBarcode = {
-                    scanner.startScan()
+                    scanner
+                        .startScan()
                         .addOnSuccessListener { barcode ->
                             val rawValue = barcode.rawValue
                             if (rawValue.isNullOrBlank()) {
@@ -122,8 +125,7 @@ fun AddMealScreen(
                             } else {
                                 viewModel.findScannedProduct(rawValue, barcode.format.toBarcodeFormatName())
                             }
-                        }
-                        .addOnCanceledListener { viewModel.onScanCancelled() }
+                        }.addOnCanceledListener { viewModel.onScanCancelled() }
                         .addOnFailureListener { exception -> viewModel.onScannerUnavailable(exception.toScannerMessage()) }
                 },
                 modifier = contentModifier,
@@ -187,9 +189,10 @@ private fun ProductPickerContent(
                 ProductSearchField(state.searchQuery, viewModel::updateSearchQuery)
                 FilledTonalButton(
                     onClick = onScanBarcode,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
                     shape = RoundedCornerShape(20.dp),
                 ) {
                     Icon(
@@ -208,10 +211,11 @@ private fun ProductPickerContent(
                         modifier = Modifier.weight(1f).height(44.dp),
                         shape = RoundedCornerShape(20.dp),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
-                        ),
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
+                            ),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)),
                     ) {
                         Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -222,10 +226,11 @@ private fun ProductPickerContent(
                         modifier = Modifier.weight(1f).height(44.dp),
                         shape = RoundedCornerShape(20.dp),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = CtaColor,
-                            contentColor = Color.White,
-                        ),                    
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = CtaColor,
+                                contentColor = Color.White,
+                            ),
                     ) {
                         Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Text(text = "Блюдо", modifier = Modifier.padding(start = 6.dp))
@@ -269,13 +274,17 @@ private fun ProductPickerContent(
 }
 
 @Composable
-private fun ProductSearchField(value: String, onValueChange: (String) -> Unit) {
+private fun ProductSearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(56.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(56.dp),
         placeholder = { Text("Поиск продукта или блюда") },
         leadingIcon = {
             Icon(
@@ -286,17 +295,21 @@ private fun ProductSearchField(value: String, onValueChange: (String) -> Unit) {
         },
         singleLine = true,
         shape = RoundedCornerShape(20.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
     )
 }
 
 @Composable
-private fun AddMealFilters(state: AddMealUiState, viewModel: AddMealViewModel) {
+private fun AddMealFilters(
+    state: AddMealUiState,
+    viewModel: AddMealViewModel,
+) {
     Box(modifier = Modifier.fillMaxWidth()) {
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -308,31 +321,34 @@ private fun AddMealFilters(state: AddMealUiState, viewModel: AddMealViewModel) {
                     onClick = { viewModel.selectFilter(filter) },
                     label = { Text(filter.title, style = MaterialTheme.typography.labelLarge) },
                     shape = RoundedCornerShape(16.dp),
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = CtaColor.copy(alpha = 0.28f),
-                        selectedLabelColor = MaterialTheme.colorScheme.onSurface,
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f),
-                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
-                        selected = state.selectedFilter == filter,
-                        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f),
-                        selectedBorderColor = CtaColor.copy(alpha = 0.44f),
-                    ),
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = CtaColor.copy(alpha = 0.28f),
+                            selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f),
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                    border =
+                        FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = state.selectedFilter == filter,
+                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f),
+                            selectedBorderColor = CtaColor.copy(alpha = 0.44f),
+                        ),
                 )
             }
         }
         Box(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .width(34.dp)
-                .height(40.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background),
+            modifier =
+                Modifier
+                    .align(Alignment.CenterEnd)
+                    .width(34.dp)
+                    .height(40.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background),
+                        ),
                     ),
-                ),
         )
     }
 }
@@ -346,9 +362,10 @@ private fun AddMealProductCard(
 ) {
     PremiumCard(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -394,16 +411,18 @@ private fun AddMealDishCard(
 ) {
     PremiumCard(modifier = Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .background(CtaColor.copy(alpha = 0.16f), RoundedCornerShape(14.dp)),
+                modifier =
+                    Modifier
+                        .size(42.dp)
+                        .background(CtaColor.copy(alpha = 0.16f), RoundedCornerShape(14.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -425,11 +444,21 @@ private fun AddMealDishCard(
                     )
                     if (showTypeBadge) TypeBadge("Блюдо")
                 }
-                Text("${dish.totalWeight.grams()} г · ${dish.calories.kcal()} ккал", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "${dish.totalWeight.grams()} г · ${dish.calories.kcal()} ккал",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 MacroLine(protein = dish.protein, fat = dish.fat, carbs = dish.carbs)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                FilledTonalButton(onClick = onSelect, shape = RoundedCornerShape(16.dp), contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)) { Text("Выбрать") }
+                FilledTonalButton(
+                    onClick = onSelect,
+                    shape = RoundedCornerShape(16.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                ) {
+                    Text("Выбрать")
+                }
                 FavoriteIconButton(isFavorite = dish.isFavorite, onClick = onToggleFavorite)
             }
         }
@@ -442,13 +471,18 @@ private fun TypeBadge(text: String) {
         text = text,
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .padding(start = 4.dp),
+        modifier =
+            Modifier
+                .padding(start = 4.dp),
     )
 }
 
 @Composable
-private fun MacroLine(protein: Double, fat: Double, carbs: Double) {
+private fun MacroLine(
+    protein: Double,
+    fat: Double,
+    carbs: Double,
+) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Б ${protein.grams()}", color = ProteinColor, style = MaterialTheme.typography.bodySmall)
         Text("Ж ${fat.grams()}", color = FatColor, style = MaterialTheme.typography.bodySmall)
@@ -457,18 +491,30 @@ private fun MacroLine(protein: Double, fat: Double, carbs: Double) {
 }
 
 @Composable
-private fun FavoriteIconButton(isFavorite: Boolean, onClick: () -> Unit) {
+private fun FavoriteIconButton(
+    isFavorite: Boolean,
+    onClick: () -> Unit,
+) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier
-            .size(40.dp)
-            .background(
-                color = if (isFavorite) FavoriteColor.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.78f),
-                shape = CircleShape,
+        modifier =
+            Modifier
+                .size(40.dp)
+                .background(
+                    color =
+                        if (isFavorite) {
+                            FavoriteColor.copy(
+                                alpha = 0.16f,
+                            )
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.78f)
+                        },
+                    shape = CircleShape,
+                ),
+        colors =
+            IconButtonDefaults.iconButtonColors(
+                contentColor = if (isFavorite) FavoriteColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
             ),
-        colors = IconButtonDefaults.iconButtonColors(
-            contentColor = if (isFavorite) FavoriteColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
-        ),
     ) {
         Icon(
             imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
@@ -492,14 +538,16 @@ private fun PremiumCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
     ) {
         Box(
-            modifier = Modifier.background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.98f),
-                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
+            modifier =
+                Modifier.background(
+                    Brush.linearGradient(
+                        colors =
+                            listOf(
+                                MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.98f),
+                                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
+                            ),
                     ),
                 ),
-            ),
         ) {
             content()
         }
@@ -546,7 +594,11 @@ private fun QuickAddContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(product.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                    Text(product.nutritionLine(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        product.nutritionLine(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
@@ -588,14 +640,16 @@ private fun QuickAddContent(
         item {
             Button(
                 onClick = viewModel::save,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                 shape = RoundedCornerShape(20.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = CtaColor,
-                    contentColor = Color.White,
-                ),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = CtaColor,
+                        contentColor = Color.White,
+                    ),
             ) { Text("Добавить") }
         }
     }
@@ -661,34 +715,40 @@ private fun OpenFoodFactsProductDialog(
     )
 }
 
-private fun Int.toBarcodeFormatName(): String = when (this) {
-    Barcode.FORMAT_CODE_128 -> "CODE_128"
-    Barcode.FORMAT_CODE_39 -> "CODE_39"
-    Barcode.FORMAT_CODE_93 -> "CODE_93"
-    Barcode.FORMAT_CODABAR -> "CODABAR"
-    Barcode.FORMAT_DATA_MATRIX -> "DATA_MATRIX"
-    Barcode.FORMAT_EAN_13 -> "EAN_13"
-    Barcode.FORMAT_EAN_8 -> "EAN_8"
-    Barcode.FORMAT_ITF -> "ITF"
-    Barcode.FORMAT_QR_CODE -> "QR_CODE"
-    Barcode.FORMAT_UPC_A -> "UPC_A"
-    Barcode.FORMAT_UPC_E -> "UPC_E"
-    Barcode.FORMAT_PDF417 -> "PDF417"
-    Barcode.FORMAT_AZTEC -> "AZTEC"
-    else -> "UNKNOWN"
-}
+private fun Int.toBarcodeFormatName(): String =
+    when (this) {
+        Barcode.FORMAT_CODE_128 -> "CODE_128"
+        Barcode.FORMAT_CODE_39 -> "CODE_39"
+        Barcode.FORMAT_CODE_93 -> "CODE_93"
+        Barcode.FORMAT_CODABAR -> "CODABAR"
+        Barcode.FORMAT_DATA_MATRIX -> "DATA_MATRIX"
+        Barcode.FORMAT_EAN_13 -> "EAN_13"
+        Barcode.FORMAT_EAN_8 -> "EAN_8"
+        Barcode.FORMAT_ITF -> "ITF"
+        Barcode.FORMAT_QR_CODE -> "QR_CODE"
+        Barcode.FORMAT_UPC_A -> "UPC_A"
+        Barcode.FORMAT_UPC_E -> "UPC_E"
+        Barcode.FORMAT_PDF417 -> "PDF417"
+        Barcode.FORMAT_AZTEC -> "AZTEC"
+        else -> "UNKNOWN"
+    }
 
 private fun Exception.toScannerMessage(): String {
     val statusCode = (this as? ApiException)?.statusCode
     return when (statusCode) {
         CommonStatusCodes.CANCELED -> "Сканирование отменено"
+
         ConnectionResult.SERVICE_MISSING,
         ConnectionResult.SERVICE_DISABLED,
-        ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED -> "Google Play services недоступны"
+        ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED,
+        -> "Google Play services недоступны"
+
         CommonStatusCodes.ERROR,
         CommonStatusCodes.DEVELOPER_ERROR,
         CommonStatusCodes.INTERNAL_ERROR,
-        CommonStatusCodes.API_NOT_CONNECTED -> "Сканер недоступен"
+        CommonStatusCodes.API_NOT_CONNECTED,
+        -> "Сканер недоступен"
+
         else -> "Сканер недоступен"
     }
 }
