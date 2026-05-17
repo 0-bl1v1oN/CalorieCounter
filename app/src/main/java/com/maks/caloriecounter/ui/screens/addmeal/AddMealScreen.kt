@@ -584,6 +584,7 @@ private fun PremiumCard(
 }
 
 private val CtaColor = Color(0xFFC83A7A)
+private val FavoriteColor = Color(0xFFD7B56D)
 private val ProteinColor = Color(0xFF9FB2FF)
 private val FatColor = Color(0xFFFFB020)
 private val CarbsColor = Color(0xFFFF5C9A)
