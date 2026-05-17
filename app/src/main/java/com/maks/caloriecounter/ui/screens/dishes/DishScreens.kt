@@ -3,16 +3,17 @@ package com.maks.caloriecounter.ui.screens.dishes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -55,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.maks.caloriecounter.domain.model.Dish
 import com.maks.caloriecounter.domain.model.DishIngredient
 import com.maks.caloriecounter.domain.model.MealType
@@ -99,34 +101,50 @@ fun DishFormScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            item {
+                Text(
+                    text = "Новое блюдо",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
             item { AppTextField(state.name, viewModel::updateName, "Название блюда", placeholder = "Например: Творог со сметаной") }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
                         onClick = onPickProducts,
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.58f),
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp)
+                            .defaultMinSize(minHeight = 46.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.92f),
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                        border = BorderStroke(1.dp, CtaColor.copy(alpha = 0.22f)),
                     ) {
-                        Icon(Icons.Outlined.Add, contentDescription = null)
-                        Text("Ингредиенты", modifier = Modifier.padding(start = 6.dp))
+                        Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp), tint = CtaColor)
+                        Text("Ингредиенты", modifier = Modifier.padding(start = 6.dp), maxLines = 1)
                     }
                     OutlinedButton(
                         onClick = onCreateProduct,
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        shape = RoundedCornerShape(18.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.42f),
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(46.dp)
+                            .defaultMinSize(minHeight = 46.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.44f),
+                            ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)),
                     ) {
-                        Icon(Icons.Outlined.Add, contentDescription = null)
-                        Text("Продукт", modifier = Modifier.padding(start = 6.dp))
+                        Icon(Icons.Outlined.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text("Продукт", modifier = Modifier.padding(start = 6.dp), maxLines = 1)
                     }
                 }
             }
@@ -148,17 +166,26 @@ fun DishFormScreen(
                     )
                 }
             }
-            item { DishTotalsCard(totalWeight = state.totalWeight, calories = state.nutrition.calories, protein = state.nutrition.protein, fat = state.nutrition.fat, carbs = state.nutrition.carbs) }
+            item {
+                DishTotalsCard(
+                    totalWeight = state.totalWeight,
+                    calories = state.nutrition.calories,
+                    protein = state.nutrition.protein,
+                    fat = state.nutrition.fat,
+                    carbs = state.nutrition.carbs,
+                )
+            }
             state.error?.let { item { Text(it, color = MaterialTheme.colorScheme.error) } }
             item {
                 Button(
                     onClick = viewModel::save,
                     modifier = Modifier.fillMaxWidth().height(56.dp),
                     shape = RoundedCornerShape(20.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = CtaColor,
-                        contentColor = Color.White,
-                    ),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = CtaColor,
+                            contentColor = Color.White,
+                        ),
                 ) { Text("Сохранить блюдо") }
             }
         }
@@ -166,7 +193,11 @@ fun DishFormScreen(
 }
 
 @Composable
-private fun IngredientRow(ingredient: DishIngredient, onGramsChange: (String) -> Unit, onRemove: () -> Unit) {
+private fun IngredientRow(
+    ingredient: DishIngredient,
+    onGramsChange: (String) -> Unit,
+    onRemove: () -> Unit,
+) {
     val product = ingredient.productSnapshot
     PremiumCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
         Row(
@@ -221,11 +252,27 @@ private fun DishIngredientsEmptyState() {
 }
 
 @Composable
-private fun DishTotalsCard(totalWeight: Double, calories: Double, protein: Double, fat: Double, carbs: Double) {
+private fun DishTotalsCard(
+    totalWeight: Double,
+    calories: Double,
+    protein: Double,
+    fat: Double,
+    carbs: Double,
+) {
     PremiumCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Text("Итого по блюду", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text("${totalWeight.grams()} г · ${calories.kcal()} ккал", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+            Text(
+                text = "${totalWeight.grams()} г · ${calories.kcal()} ккал",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+            )
             MacroLine(protein, fat, carbs)
         }
     }
@@ -233,35 +280,57 @@ private fun DishTotalsCard(totalWeight: Double, calories: Double, protein: Doubl
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductPickerScreen(viewModel: ProductPickerViewModel, onBack: () -> Unit, onAdd: (List<Long>) -> Unit, modifier: Modifier = Modifier) {
+fun ProductPickerScreen(
+    viewModel: ProductPickerViewModel,
+    onBack: () -> Unit,
+    onAdd: (List<Long>) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val state by viewModel.uiState.collectAsState()
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = { AppTopBar("Выбор продуктов", onBack) },
         bottomBar = {
-            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text("Выбрано: ${state.selectedIds.size}", modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
                 Button(
                     onClick = { onAdd(state.selectedIds.toList()) },
                     enabled = state.selectedIds.isNotEmpty(),
                     shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = CtaColor,
-                        contentColor = Color.White,
-                    ),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = CtaColor,
+                            contentColor = Color.White,
+                        ),
                 ) { Text("Добавить") }
             }
         },
     ) { innerPadding ->
-        LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             item { SearchField(state.searchQuery, viewModel::updateSearchQuery) }
-            if (state.products.isEmpty()) item { EmptyState("Продукты не найдены") } else items(state.products, key = { it.id }) { product ->
-                PremiumCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Checkbox(checked = product.id in state.selectedIds, onCheckedChange = { viewModel.toggleProduct(product.id) })
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text(product.caloriesPer100g.kcal() + " ккал на 100 г", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (state.products.isEmpty()) {
+                item { EmptyState("Продукты не найдены") }
+            } else {
+                items(state.products, key = { it.id }) { product ->
+                    PremiumCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Checkbox(checked = product.id in state.selectedIds, onCheckedChange = { viewModel.toggleProduct(product.id) })
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                                Text(product.caloriesPer100g.kcal() + " ккал на 100 г", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
                 }
@@ -272,7 +341,12 @@ fun ProductPickerScreen(viewModel: ProductPickerViewModel, onBack: () -> Unit, o
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DishLogScreen(viewModel: DishLogViewModel, onBack: () -> Unit, onSaved: () -> Unit, modifier: Modifier = Modifier) {
+fun DishLogScreen(
+    viewModel: DishLogViewModel,
+    onBack: () -> Unit,
+    onSaved: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val state by viewModel.uiState.collectAsState()
     val dish = state.dish
     LaunchedEffect(state.saved) { if (state.saved) onSaved() }
@@ -282,7 +356,11 @@ fun DishLogScreen(viewModel: DishLogViewModel, onBack: () -> Unit, onSaved: () -
         } else {
             val grams = state.grams.replace(',', '.').toDoubleOrNull() ?: 0.0
             val n = NutritionCalculator.forDishPortion(dish, grams)
-            LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(innerPadding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 item { DishInfoCard(dish = dish, onToggleFavorite = viewModel::toggleFavorite) }
                 item { AppTextField(state.grams, viewModel::updateGrams, "Граммы", number = true) }
                 item {
@@ -290,7 +368,9 @@ fun DishLogScreen(viewModel: DishLogViewModel, onBack: () -> Unit, onSaved: () -
                         Text("Приём пищи", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(MealType.todaySections) { type ->
-                                FilterChip(selected = state.mealType == type, onClick = { viewModel.updateMealType(type) }, label = { Text(type.title) }, shape = RoundedCornerShape(16.dp))
+                                FilterChip(selected = state.mealType == type, onClick = {
+                                    viewModel.updateMealType(type)
+                                }, label = { Text(type.title) }, shape = RoundedCornerShape(16.dp))
                             }
                         }
                     }
@@ -302,10 +382,11 @@ fun DishLogScreen(viewModel: DishLogViewModel, onBack: () -> Unit, onSaved: () -
                         onClick = viewModel::save,
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         shape = RoundedCornerShape(20.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = CtaColor,
-                            contentColor = Color.White,
-                        ),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = CtaColor,
+                                contentColor = Color.White,
+                            ),
                     ) { Text("Добавить") }
                 }
             }
@@ -314,7 +395,10 @@ fun DishLogScreen(viewModel: DishLogViewModel, onBack: () -> Unit, onSaved: () -
 }
 
 @Composable
-private fun DishInfoCard(dish: Dish, onToggleFavorite: () -> Unit) {
+private fun DishInfoCard(
+    dish: Dish,
+    onToggleFavorite: () -> Unit,
+) {
     PremiumCard(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(18.dp),
@@ -322,16 +406,27 @@ private fun DishInfoCard(dish: Dish, onToggleFavorite: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .background(CtaColor.copy(alpha = 0.16f), RoundedCornerShape(14.dp)),
+                modifier =
+                    Modifier
+                        .size(40.dp)
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(CtaColor.copy(alpha = 0.24f), CtaColor.copy(alpha = 0.10f)),
+                            ),
+                            RoundedCornerShape(14.dp),
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(Icons.Outlined.Restaurant, contentDescription = null, modifier = Modifier.size(22.dp), tint = CtaColor)
             }
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(dish.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        dish.name,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                     Text("Блюдо", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
                 }
                 Text("${dish.totalWeight.grams()} г · ${dish.calories.kcal()} ккал", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -344,7 +439,10 @@ private fun DishInfoCard(dish: Dish, onToggleFavorite: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AppTopBar(title: String, onBack: () -> Unit) {
+private fun AppTopBar(
+    title: String,
+    onBack: () -> Unit,
+) {
     TopAppBar(
         title = { Text(title) },
         navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Outlined.ArrowBack, contentDescription = "Назад") } },
@@ -353,7 +451,10 @@ private fun AppTopBar(title: String, onBack: () -> Unit) {
 }
 
 @Composable
-private fun SearchField(value: String, onValueChange: (String) -> Unit) {
+private fun SearchField(
+    value: String,
+    onValueChange: (String) -> Unit,
+) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -362,37 +463,56 @@ private fun SearchField(value: String, onValueChange: (String) -> Unit) {
         leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
         singleLine = true,
         shape = RoundedCornerShape(20.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
-            focusedBorderColor = MaterialTheme.colorScheme.primary,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
     )
 }
 
 @Composable
-private fun MacroLine(protein: Double, fat: Double, carbs: Double) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Б ${protein.grams()}", color = ProteinColor, style = MaterialTheme.typography.bodyMedium)
-        Text("Ж ${fat.grams()}", color = FatColor, style = MaterialTheme.typography.bodyMedium)
-        Text("У ${carbs.grams()}", color = CarbsColor, style = MaterialTheme.typography.bodyMedium)
+private fun MacroLine(
+    protein: Double,
+    fat: Double,
+    carbs: Double,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text("Б ${protein.grams()}", color = ProteinColor, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp), maxLines = 1)
+        Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f), style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp), maxLines = 1)
+        Text("Ж ${fat.grams()}", color = FatColor, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp), maxLines = 1)
+        Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f), style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp), maxLines = 1)
+        Text("У ${carbs.grams()}", color = CarbsColor, style = MaterialTheme.typography.bodyMedium.copy(fontSize = 13.sp), maxLines = 1)
     }
 }
 
 @Composable
-private fun FavoriteIconButton(isFavorite: Boolean, onClick: () -> Unit) {
+private fun FavoriteIconButton(
+    isFavorite: Boolean,
+    onClick: () -> Unit,
+) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier
-            .size(40.dp)
-            .background(
-                color = if (isFavorite) FavoriteColor.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.78f),
-                shape = CircleShape,
+        modifier =
+            Modifier
+                .size(40.dp)
+                .background(
+                    color =
+                        if (isFavorite) {
+                            FavoriteColor.copy(
+                                alpha = 0.16f,
+                            )
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.78f)
+                        },
+                    shape = CircleShape,
+                ),
+        colors =
+            IconButtonDefaults.iconButtonColors(
+                contentColor = if (isFavorite) FavoriteColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
             ),
-        colors = IconButtonDefaults.iconButtonColors(
-            contentColor = if (isFavorite) FavoriteColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
-        ),
     ) {
         Icon(
             imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
@@ -403,11 +523,17 @@ private fun FavoriteIconButton(isFavorite: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun CompactMacroLine(protein: Double, fat: Double, carbs: Double) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Б ${protein.grams()}", color = ProteinColor, style = MaterialTheme.typography.bodySmall, maxLines = 1)
-        Text("Ж ${fat.grams()}", color = FatColor, style = MaterialTheme.typography.bodySmall, maxLines = 1)
-        Text("У ${carbs.grams()}", color = CarbsColor, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+private fun CompactMacroLine(
+    protein: Double,
+    fat: Double,
+    carbs: Double,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Text("Б ${protein.grams()}", color = ProteinColor, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), maxLines = 1)
+        Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f), style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), maxLines = 1)
+        Text("Ж ${fat.grams()}", color = FatColor, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), maxLines = 1)
+        Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f), style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), maxLines = 1)
+        Text("У ${carbs.grams()}", color = CarbsColor, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), maxLines = 1)
     }
 }
 
@@ -425,14 +551,16 @@ private fun PremiumCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
     ) {
         Box(
-            modifier = Modifier.background(
-                Brush.linearGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.98f),
-                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.98f),
+                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
+                        ),
+                            ),
                     ),
-                ),
-            ),
         ) {
             content()
         }

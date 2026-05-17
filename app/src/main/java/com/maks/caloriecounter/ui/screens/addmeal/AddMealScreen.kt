@@ -478,49 +478,37 @@ private fun TypeBadge(text: String) {
 }
 
 @Composable
-private fun MacroLine(
-    protein: Double,
-    fat: Double,
-    carbs: Double,
-) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Б ${protein.grams()}", color = ProteinColor, style = MaterialTheme.typography.bodySmall)
-        Text("Ж ${fat.grams()}", color = FatColor, style = MaterialTheme.typography.bodySmall)
-        Text("У ${carbs.grams()}", color = CarbsColor, style = MaterialTheme.typography.bodySmall)
+private fun AddMealSelectButton(onClick: () -> Unit) {
+    FilledTonalButton(
+        onClick = onClick,
+        modifier =
+            Modifier
+                .height(34.dp)
+            .defaultMinSize(minWidth = 74.dp, minHeight = 34.dp),
+        shape = RoundedCornerShape(14.dp),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+        colors = ButtonDefaults.filledTonalButtonColors(
+            containerColor = CtaColor.copy(alpha = 0.18f),
+            contentColor = Color.White,
+            ),
+    ) {
+        Text(
+            text = "Выбрать",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
     }
 }
 
 @Composable
-private fun FavoriteIconButton(
-    isFavorite: Boolean,
-    onClick: () -> Unit,
-) {
-    IconButton(
-        onClick = onClick,
-        modifier =
-            Modifier
-                .size(40.dp)
-                .background(
-                    color =
-                        if (isFavorite) {
-                            FavoriteColor.copy(
-                                alpha = 0.16f,
-                            )
-                        } else {
-                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.78f)
-                        },
-                    shape = CircleShape,
-                ),
-        colors =
-            IconButtonDefaults.iconButtonColors(
-                contentColor = if (isFavorite) FavoriteColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
-            ),
-    ) {
-        Icon(
-            imageVector = if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
-            contentDescription = if (isFavorite) "Убрать из избранного" else "Добавить в избранное",
-            modifier = Modifier.size(22.dp),
-        )
+private fun MacroLine(protein: Double, fat: Double, carbs: Double) {
+    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+        Text("Б ${protein.grams()}", color = ProteinColor, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), maxLines = 1)
+        Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f), style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), maxLines = 1)
+        Text("Ж ${fat.grams()}", color = FatColor, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), maxLines = 1)
+        Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f), style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), maxLines = 1)
+        Text("У ${carbs.grams()}", color = CarbsColor, style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp), maxLines = 1)
     }
 }
 
@@ -538,14 +526,14 @@ private fun PremiumCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
     ) {
         Box(
-            modifier =
-                Modifier.background(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
                     Brush.linearGradient(
-                        colors =
-                            listOf(
-                                MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.98f),
-                                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
-                            ),
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.98f),
+                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
+                        ),
                     ),
                 ),
         ) {

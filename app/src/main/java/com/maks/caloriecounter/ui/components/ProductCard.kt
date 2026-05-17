@@ -27,8 +27,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.maks.caloriecounter.domain.model.Product
@@ -38,22 +38,23 @@ import com.maks.caloriecounter.domain.model.Product
 fun ProductCard(
     product: Product,
     onOpenActions: () -> Unit,
-    onToggleFavorite: () -> Unit,
     onQuickAdd: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .combinedClickable(onClick = onOpenActions, onLongClick = onOpenActions),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .combinedClickable(onClick = onOpenActions, onLongClick = onOpenActions),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.32f)),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
@@ -77,13 +78,15 @@ fun ProductCard(
             IconButton(
                 onClick = onToggleFavorite,
                 modifier = Modifier.size(36.dp),
-                colors = IconButtonDefaults.iconButtonColors(
-                    contentColor = if (product.isFavorite) {
-                        Color(0xFFD7B56D)
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
-                    },
-                ),
+                colors =
+                    IconButtonDefaults.iconButtonColors(
+                        contentColor =
+                            if (product.isFavorite) {
+                                Color(0xFFD7B56D)
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
+                            },
+                    ),
             ) {
                 Icon(
                     imageVector = if (product.isFavorite) Icons.Filled.Star else Icons.Outlined.StarBorder,
@@ -95,10 +98,11 @@ fun ProductCard(
             FilledTonalIconButton(
                 onClick = onQuickAdd,
                 modifier = Modifier.size(36.dp),
-                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                ),
+                colors =
+                    IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Add,
@@ -110,4 +114,5 @@ fun ProductCard(
     }
 }
 
-fun Product.nutritionLine(): String = "${caloriesPer100g.kcal()} ккал • Б ${proteinPer100g.grams()} • Ж ${fatPer100g.grams()} • У ${carbsPer100g.grams()}"
+fun Product.nutritionLine(): String =
+    "${caloriesPer100g.kcal()} ккал • Б ${proteinPer100g.grams()} • Ж ${fatPer100g.grams()} • У ${carbsPer100g.grams()}"
